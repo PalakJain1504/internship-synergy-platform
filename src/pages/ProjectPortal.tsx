@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
-import FilterSection, { FilterValues } from '@/components/FilterSection';
+import FilterSection from '@/components/FilterSection';
 import Table, { ProjectEntry } from '@/components/Table';
 import FileUpload from '@/components/FileUpload';
 import UploadModal from '@/components/UploadModal';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Download, Upload, FileUp } from 'lucide-react';
 import { generateSampleProjects, filterProjects, exportTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { Filter } from '@/lib/types';
 
 const ProjectPortal = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const ProjectPortal = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [allProjects, setAllProjects] = useState<ProjectEntry[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<ProjectEntry[]>([]);
-  const [currentFilters, setCurrentFilters] = useState<FilterValues>({
+  const [currentFilters, setCurrentFilters] = useState<Filter>({
     year: '',
     semester: '',
     course: '',
@@ -44,10 +45,10 @@ const ProjectPortal = () => {
     setTimeout(() => setIsLoaded(true), 500);
   }, [isAuthenticated, navigate]);
 
-  const handleFilterChange = (filters: FilterValues) => {
+  const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    // Apply filters to projects
+    // Apply filters to projects - modify the filterProjects function to handle the new "all-xxx" values
     const filtered = filterProjects(allProjects, filters);
     setFilteredProjects(filtered);
   };

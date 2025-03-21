@@ -12,18 +12,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { FilterValues } from './FilterSection';
+import { Filter } from '@/lib/types';
 import { ProjectEntry } from './Table';
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (entries: ProjectEntry[], metadata: FilterValues) => void;
+  onUpload: (entries: ProjectEntry[], metadata: Filter) => void;
 }
 
 const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) => {
   const [file, setFile] = useState<File | null>(null);
-  const [metadata, setMetadata] = useState<FilterValues>({
+  const [metadata, setMetadata] = useState<Filter>({
     year: '',
     semester: '',
     course: '',
@@ -45,7 +45,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     }
   };
 
-  const handleMetadataChange = (key: keyof FilterValues, value: string) => {
+  const handleMetadataChange = (key: keyof Filter, value: string) => {
     setMetadata((prev) => ({ ...prev, [key]: value }));
   };
 

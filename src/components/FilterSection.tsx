@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FilterIcon, RefreshCw, Search } from 'lucide-react';
+import { Filter } from '@/lib/types';
 
 // Sample data for filters
 const years = ['2023', '2022', '2021'];
@@ -24,26 +25,19 @@ const facultyCoordinators = [
 ];
 
 interface FilterSectionProps {
-  onFilterChange: (filters: FilterValues) => void;
-}
-
-export interface FilterValues {
-  year: string;
-  semester: string;
-  course: string;
-  facultyCoordinator: string;
+  onFilterChange: (filters: Filter) => void;
 }
 
 const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [filters, setFilters] = useState<FilterValues>({
+  const [filters, setFilters] = useState<Filter>({
     year: '',
     semester: '',
     course: '',
     facultyCoordinator: '',
   });
 
-  const handleFilterChange = (key: keyof FilterValues, value: string) => {
+  const handleFilterChange = (key: keyof Filter, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     onFilterChange(newFilters);
@@ -106,7 +100,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
                 <SelectValue placeholder="Select Year" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Years</SelectItem>
+                <SelectItem value="all-years">All Years</SelectItem>
                 {years.map((year) => (
                   <SelectItem key={year} value={year}>
                     {year}
@@ -123,7 +117,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
                 <SelectValue placeholder="Select Semester" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Semesters</SelectItem>
+                <SelectItem value="all-semesters">All Semesters</SelectItem>
                 {semesters.map((semester) => (
                   <SelectItem key={semester} value={semester}>
                     {semester}
@@ -140,7 +134,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
                 <SelectValue placeholder="Select Course" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Courses</SelectItem>
+                <SelectItem value="all-courses">All Courses</SelectItem>
                 {courses.map((course) => (
                   <SelectItem key={course} value={course}>
                     {course}
@@ -160,7 +154,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
                 <SelectValue placeholder="Select Coordinator" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Coordinators</SelectItem>
+                <SelectItem value="all-coordinators">All Coordinators</SelectItem>
                 {facultyCoordinators.map((coordinator) => (
                   <SelectItem key={coordinator} value={coordinator}>
                     {coordinator}
