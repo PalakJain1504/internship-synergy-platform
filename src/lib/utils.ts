@@ -9,18 +9,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-<<<<<<< HEAD
-export function generateSampleProjects(count: number): ProjectData[] {
-  const years = ["2023", "2022", "2021"];
-  const semesters = ["Spring", "Summer", "Fall", "Winter"];
-  const courses = ["BSc", "BTech CSE", "BTech AI/ML", "BCA", "BCA AI/DS", "MCA"];
-  const facultyCoordinators = [
-    "Dr. Aishwarya Sharma",
-    "Prof. Rajat Verma",
-    "Dr. Neeraj Singh",
-    "Prof. Sunita Kumari",
-  ];
-=======
 // Function to generate sample project data
 export function generateSampleProjects(count = 70): ProjectData[] {
   const domains = ['Web Development', 'Mobile App', 'Machine Learning', 'IoT', 'Cloud Computing', 'Blockchain'];
@@ -30,7 +18,6 @@ export function generateSampleProjects(count = 70): ProjectData[] {
   const semesters = ['Spring', 'Summer', 'Fall', 'Winter'];
   const courses = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
   const facultyCoordinators = ['Dr. Aishwarya Sharma', 'Prof. Rajat Verma', 'Dr. Neeraj Singh', 'Prof. Sunita Kumari'];
->>>>>>> 04bbbee (21-03-2025)
 
   return Array.from({ length: count }).map((_, index) => ({
     id: `project-${index + 1}`,
@@ -200,7 +187,7 @@ export function exportTableToPDF(
   });
 
   // Add date and page numbers
-  const totalPages = doc.internal.getNumberOfPages();
+  const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(8);

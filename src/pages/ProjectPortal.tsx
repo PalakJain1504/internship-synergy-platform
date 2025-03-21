@@ -72,7 +72,7 @@ const ProjectPortal = () => {
     setAllProjects(updatedAllProjects);
   };
 
-  const handleUpload = (entries: ProjectEntry[], metadata: FilterValues) => {
+  const handleUpload = (entries: ProjectEntry[], metadata: Filter) => {
     // Update filters to match the uploaded data
     setCurrentFilters(metadata);
     
