@@ -1,10 +1,13 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -13,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 210 100% 33%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -35,19 +38,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -96,6 +92,65 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+  
+  .glass-dark {
+    @apply bg-black/30 backdrop-blur-md border border-white/10 shadow-lg;
+  }
+  
+  .btn-primary {
+    @apply bg-brand-blue hover:bg-brand-darkBlue text-white transition-all duration-300 font-medium;
+  }
+  
+  .btn-secondary {
+    @apply bg-brand-red hover:bg-brand-darkRed text-white transition-all duration-300 font-medium;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-blue to-brand-lightBlue bg-clip-text text-transparent;
+  }
+  
+  .page-container {
+    @apply w-full min-h-screen flex flex-col items-center justify-start px-4 py-8 md:px-8 lg:px-16 animate-fade-in;
+  }
+  
+  .section-container {
+    @apply w-full max-w-7xl mx-auto py-6;
+  }
+  
+  .input-field {
+    @apply px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-brand-blue/50 focus:border-brand-blue outline-none transition-all duration-200;
+  }
+  
+  .form-group {
+    @apply flex flex-col gap-1.5 w-full;
+  }
+  
+  .table-container {
+    @apply w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm;
+  }
+  
+  .data-table {
+    @apply w-full min-w-full divide-y divide-gray-200;
+  }
+  
+  .table-header {
+    @apply bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider;
+  }
+  
+  .table-cell {
+    @apply px-6 py-4 whitespace-nowrap;
+  }
+  
+  .table-row {
+    @apply hover:bg-gray-50 transition-colors duration-150;
   }
 }
