@@ -13,6 +13,7 @@ import {
   FileText,
   Upload,
   Download,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 
 export interface ProjectEntry {
@@ -63,6 +65,8 @@ const Table: React.FC<TableProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [editingRow, setEditingRow] = useState<string | null>(null);
   const [editedData, setEditedData] = useState<ProjectEntry | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeFileField, setActiveFileField] = useState<{id: string, field: string} | null>(null);
   
   // Calculate pagination info
   const totalPages = Math.ceil(data.length / pageSize);
@@ -178,16 +182,45 @@ const Table: React.FC<TableProps> = ({
     setEditedData({ ...editedData, [field]: value });
   };
 
-  // Handle file upload
-  const handleFileUpload = (field: 'form' | 'presentation' | 'report') => {
-    // This would be replaced with actual file upload logic
-    // For now just simulate adding a PDF file
+  // Trigger file input click
+  const triggerFileInput = (id: string, field: 'form' | 'presentation' | 'report') => {
+    setActiveFileField({id, field});
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editedData || !activeFileField) return;
+    
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Create a file name based on group number and file type
+    const fieldName = activeFileField.field;
+    const fileName = `${editedData.groupNo}_${editedData.rollNo}_${fieldName}.${file.name.split('.').pop()}`;
+    
+    setEditedData({ ...editedData, [fieldName]: fileName });
+    toast.success(`File selected: ${fileName}`);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setActiveFileField(null);
+  };
+
+  // Handle Drive link
+  const handleDriveLink = (id: string, field: 'form' | 'presentation' | 'report') => {
+    // This would be integrated with the Drive link functionality
+    // For now, just simulate adding a link
     if (!editedData) return;
     
-    const fileName = `${editedData.groupNo}_${field}.pdf`;
+    const fileName = `${editedData.groupNo}_${editedData.rollNo}_${field}_drive.pdf`;
     setEditedData({ ...editedData, [field]: fileName });
     
-    toast.success(`${field} uploaded: ${fileName}`);
+    toast.success(`Added from Drive: ${fileName}`);
   };
 
   // Render a table cell based on whether it's being edited
@@ -200,29 +233,54 @@ const Table: React.FC<TableProps> = ({
       
       if (isEditing) {
         return (
-          <div className="flex items-center space-x-2">
+          <div className="space-y-2">
             {fileValue ? (
-              <>
+              <div className="flex items-center space-x-2">
                 <span className="text-xs truncate max-w-[100px]">{fileValue}</span>
                 <Button
                   variant="outline"
                   size="icon"
                   className="h-6 w-6"
-                  onClick={() => handleFileUpload(field as 'form' | 'presentation' | 'report')}
+                  onClick={() => triggerFileInput(row.id, field as 'form' | 'presentation' | 'report')}
                 >
                   <Upload className="h-3 w-3" />
                 </Button>
-              </>
+              </div>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => handleFileUpload(field as 'form' | 'presentation' | 'report')}
-              >
-                <Upload className="h-3 w-3 mr-1" />
-                Upload
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs w-full"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Upload File
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2">
+                  <div className="flex flex-col space-y-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-xs justify-start"
+                      onClick={() => triggerFileInput(row.id, field as 'form' | 'presentation' | 'report')}
+                    >
+                      <Upload className="h-3 w-3 mr-2" />
+                      From Computer
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      className="text-xs justify-start"
+                      onClick={() => handleDriveLink(row.id, field as 'form' | 'presentation' | 'report')}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-2" />
+                      From Drive
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
         );
@@ -256,6 +314,15 @@ const Table: React.FC<TableProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelection}
+        className="hidden"
+        accept=".pdf,.doc,.docx,.ppt,.pptx"
+      />
+      
       <div className="table-container">
         <table className="data-table">
           <thead>

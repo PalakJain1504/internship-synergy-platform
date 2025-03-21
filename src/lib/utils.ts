@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import jsPDF from "jspdf";
@@ -14,10 +13,15 @@ export function generateSampleProjects(count = 70): ProjectData[] {
   const domains = ['Web Development', 'Mobile App', 'Machine Learning', 'IoT', 'Cloud Computing', 'Blockchain'];
   const facultyMentors = ['Dr. Sharma', 'Prof. Verma', 'Dr. Singh', 'Prof. Kumari', 'Dr. Mehta'];
   const industryMentors = ['Mr. Patel', 'Ms. Gupta', 'Mr. Reddy', 'Ms. Shah', 'Mr. Kumar'];
-  const years = ['2021', '2022', '2023'];
-  const semesters = ['Spring', 'Summer', 'Fall', 'Winter'];
+  const years = ['4','3', '2', '1'];
+  const semesters = ['8','7','6','5','4','3','2','1'];
   const courses = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
-  const facultyCoordinators = ['Dr. Aishwarya Sharma', 'Prof. Rajat Verma', 'Dr. Neeraj Singh', 'Prof. Sunita Kumari'];
+  const facultyCoordinators = [
+    'Dr. Pankaj', 
+    'Dr. Meenu', 
+    'Dr. Swati', 
+    'Dr. Anshu'
+  ];
 
   return Array.from({ length: count }).map((_, index) => ({
     id: `project-${index + 1}`,
