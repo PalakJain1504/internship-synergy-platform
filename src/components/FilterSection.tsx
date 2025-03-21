@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -14,14 +13,14 @@ import { FilterIcon, RefreshCw, Search } from 'lucide-react';
 import { Filter } from '@/lib/types';
 
 // Sample data for filters
-const years = ['2023', '2022', '2021'];
-const semesters = ['Spring', 'Summer', 'Fall', 'Winter'];
+const years = ['4','3', '2', '1'];
+const semesters = ['8','7','6','5','4','3','2','1'];
 const courses = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
 const facultyCoordinators = [
-  'Dr. Aishwarya Sharma', 
-  'Prof. Rajat Verma', 
-  'Dr. Neeraj Singh', 
-  'Prof. Sunita Kumari'
+  'Dr. Pankaj', 
+  'Dr. Meenu', 
+  'Dr. Swati', 
+  'Dr. Anshu'
 ];
 
 interface FilterSectionProps {

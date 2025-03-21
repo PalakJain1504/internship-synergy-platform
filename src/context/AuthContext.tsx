@@ -5,10 +5,10 @@ import { toast } from 'sonner';
 
 // Mock faculty data (would come from backend in real implementation)
 const FACULTY_CREDENTIALS = [
-  { username: 'faculty1', password: 'password1', name: 'Dr. Aishwarya Sharma' },
-  { username: 'faculty2', password: 'password2', name: 'Prof. Rajat Verma' },
-  { username: 'faculty3', password: 'password3', name: 'Dr. Neeraj Singh' },
-  { username: 'faculty4', password: 'password4', name: 'Prof. Sunita Kumari' },
+  { username: 'faculty1', password: 'password1', name: 'Dr. Pankaj' },
+  { username: 'faculty2', password: 'password2', name: 'Dr. Meenu' },
+  { username: 'faculty3', password: 'password3', name: 'Dr. Swati' },
+  { username: 'faculty4', password: 'password4', name: 'Dr. Anshu' },
 ];
 
 type User = {

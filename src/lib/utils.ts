@@ -9,6 +9,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+<<<<<<< HEAD
 export function generateSampleProjects(count: number): ProjectData[] {
   const years = ["2023", "2022", "2021"];
   const semesters = ["Spring", "Summer", "Fall", "Winter"];
@@ -19,6 +20,17 @@ export function generateSampleProjects(count: number): ProjectData[] {
     "Dr. Neeraj Singh",
     "Prof. Sunita Kumari",
   ];
+=======
+// Function to generate sample project data
+export function generateSampleProjects(count = 70): ProjectData[] {
+  const domains = ['Web Development', 'Mobile App', 'Machine Learning', 'IoT', 'Cloud Computing', 'Blockchain'];
+  const facultyMentors = ['Dr. Sharma', 'Prof. Verma', 'Dr. Singh', 'Prof. Kumari', 'Dr. Mehta'];
+  const industryMentors = ['Mr. Patel', 'Ms. Gupta', 'Mr. Reddy', 'Ms. Shah', 'Mr. Kumar'];
+  const years = ['2021', '2022', '2023'];
+  const semesters = ['Spring', 'Summer', 'Fall', 'Winter'];
+  const courses = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
+  const facultyCoordinators = ['Dr. Aishwarya Sharma', 'Prof. Rajat Verma', 'Dr. Neeraj Singh', 'Prof. Sunita Kumari'];
+>>>>>>> 04bbbee (21-03-2025)
 
   return Array.from({ length: count }).map((_, index) => ({
     id: `project-${index + 1}`,

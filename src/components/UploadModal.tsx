@@ -157,9 +157,10 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                     <SelectValue placeholder="Select Year" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="2023">2023</SelectItem>
-                    <SelectItem value="2022">2022</SelectItem>
-                    <SelectItem value="2021">2021</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -174,10 +175,14 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                     <SelectValue placeholder="Select Semester" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Spring">Spring</SelectItem>
-                    <SelectItem value="Summer">Summer</SelectItem>
-                    <SelectItem value="Fall">Fall</SelectItem>
-                    <SelectItem value="Winter">Winter</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="6">6</SelectItem>
+                    <SelectItem value="7">7</SelectItem>
+                    <SelectItem value="8">8</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -212,10 +217,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                     <SelectValue placeholder="Select Coordinator" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Dr. Aishwarya Sharma">Dr. Aishwarya Sharma</SelectItem>
-                    <SelectItem value="Prof. Rajat Verma">Prof. Rajat Verma</SelectItem>
-                    <SelectItem value="Dr. Neeraj Singh">Dr. Neeraj Singh</SelectItem>
-                    <SelectItem value="Prof. Sunita Kumari">Prof. Sunita Kumari</SelectItem>
+                  
+                    <SelectItem value="Dr. Pankaj">Dr. Pankaj</SelectItem>
+                    <SelectItem value="Dr. Meenu">Dr. Meenu</SelectItem>
+                    <SelectItem value="Dr. Swati">Dr. Swati</SelectItem>
+                    <SelectItem value="Dr. Anshu">Dr. Anshu</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
