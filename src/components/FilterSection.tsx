@@ -93,7 +93,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
         className="overflow-hidden"
       >
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-1.5 mb-3">
+          <div className="space-y-1.5 mb-4">
             <Label htmlFor="year">Year</Label>
             <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
               <SelectTrigger id="year">
@@ -110,7 +110,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
             </Select>
           </div>
 
-          <div className="space-y-1.5 mb-3">
+          <div className="space-y-1.5 mb-4">
             <Label htmlFor="semester">Semester</Label>
             <Select value={filters.semester} onValueChange={(value) => handleFilterChange('semester', value)}>
               <SelectTrigger id="semester">
@@ -127,7 +127,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
             </Select>
           </div>
 
-          <div className="space-y-1.5 mb-3">
+          <div className="space-y-1.5 mb-4">
             <Label htmlFor="course">Course</Label>
             <Select value={filters.course} onValueChange={(value) => handleFilterChange('course', value)}>
               <SelectTrigger id="course">
@@ -144,7 +144,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
             </Select>
           </div>
 
-          <div className="space-y-1.5 mb-3">
+          <div className="space-y-1.5 mb-4">
             <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
             <Select
               value={filters.facultyCoordinator}

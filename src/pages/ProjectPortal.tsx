@@ -9,10 +9,11 @@ import FileUpload from '@/components/FileUpload';
 import UploadModal from '@/components/UploadModal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Download, Upload, FileUp } from 'lucide-react';
+import { Download, Upload, FileUp, DatabaseIcon, InfoIcon } from 'lucide-react';
 import { generateSampleProjects, filterProjects, exportTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Filter } from '@/lib/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const ProjectPortal = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const ProjectPortal = () => {
   });
   const [pageSize, setPageSize] = useState(50);
   const [driveConnected, setDriveConnected] = useState(false);
+  const [showDemoAlert, setShowDemoAlert] = useState(true);
 
   useEffect(() => {
     // If not authenticated, redirect to login
@@ -48,7 +50,7 @@ const ProjectPortal = () => {
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    // Apply filters to projects - modify the filterProjects function to handle the new "all-xxx" values
+    // Apply filters to projects
     const filtered = filterProjects(allProjects, filters);
     setFilteredProjects(filtered);
   };
@@ -73,16 +75,21 @@ const ProjectPortal = () => {
   };
 
   const handleUpload = (entries: ProjectEntry[], metadata: Filter) => {
-    // Update filters to match the uploaded data
-    setCurrentFilters(metadata);
+    // Clear demo data if requested
+    const updatedProjects = showDemoAlert ? [...allProjects, ...entries] : entries;
     
-    // Add new entries to the data
-    const updatedProjects = [...allProjects, ...entries];
+    if (!showDemoAlert) {
+      toast.success('Demo data cleared. Only uploaded data will be shown.');
+    }
+    
     setAllProjects(updatedProjects);
+    setCurrentFilters(metadata);
     
     // Apply current filters to updated data
     const filtered = filterProjects(updatedProjects, metadata);
     setFilteredProjects(filtered);
+    
+    setShowDemoAlert(false);
   };
 
   const handleExportPDF = () => {
@@ -98,6 +105,13 @@ const ProjectPortal = () => {
     console.log('Connected to Google Drive:', driveLink);
     setDriveConnected(true);
     toast.success('Successfully connected to Google Drive');
+  };
+
+  const clearDemoData = () => {
+    setAllProjects([]);
+    setFilteredProjects([]);
+    setShowDemoAlert(false);
+    toast.success('Demo data cleared. System ready for fresh data upload.');
   };
 
   if (!isAuthenticated || !isLoaded) {
@@ -168,8 +182,34 @@ const ProjectPortal = () => {
                 <FileUp className="h-4 w-4 mr-2" />
                 Upload Excel
               </Button>
+              
+              {showDemoAlert && (
+                <Button
+                  variant="outline"
+                  onClick={clearDemoData}
+                  className="bg-white text-red-600 border-red-200"
+                >
+                  Clear Demo Data
+                </Button>
+              )}
             </div>
           </motion.div>
+          
+          {showDemoAlert && (
+            <motion.div variants={itemVariants} className="mb-6">
+              <Alert className="bg-blue-50 border-blue-200">
+                <InfoIcon className="h-4 w-4 text-blue-500" />
+                <AlertTitle>Demo Mode Active</AlertTitle>
+                <AlertDescription className="text-sm">
+                  <p>Currently showing demo data. This application is running in frontend-only mode with data stored in memory.</p>
+                  <p className="mt-1"><strong>Database:</strong> None (in-memory state storage only)</p>
+                  <p><strong>Platform:</strong> Frontend-only React application</p>
+                  <p><strong>ORM:</strong> None (simulated data storage)</p>
+                  <p className="mt-2 text-blue-600">To implement with a real database, you would need to add a backend service with MongoDB, MySQL, or a similar database.</p>
+                </AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
           
           <motion.div variants={itemVariants} className="mb-6">
             <FilterSection onFilterChange={handleFilterChange} />

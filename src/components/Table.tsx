@@ -68,11 +68,46 @@ const Table: React.FC<TableProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeFileField, setActiveFileField] = useState<{id: string, field: string} | null>(null);
   
+  // Group data by groupNo for display
+  const groupedData = React.useMemo(() => {
+    // First, sort by groupNo to ensure groups are together
+    const sortedData = [...data].sort((a, b) => a.groupNo.localeCompare(b.groupNo));
+    
+    const groups: Record<string, {
+      entries: ProjectEntry[],
+      groupFields: {
+        groupNo: string,
+        title: string,
+        domain: string,
+        facultyMentor: string,
+        industryMentor: string
+      }
+    }> = {};
+    
+    sortedData.forEach(entry => {
+      if (!groups[entry.groupNo]) {
+        groups[entry.groupNo] = {
+          entries: [],
+          groupFields: {
+            groupNo: entry.groupNo,
+            title: entry.title,
+            domain: entry.domain,
+            facultyMentor: entry.facultyMentor,
+            industryMentor: entry.industryMentor
+          }
+        };
+      }
+      groups[entry.groupNo].entries.push(entry);
+    });
+    
+    return Object.values(groups);
+  }, [data]);
+  
   // Calculate pagination info
-  const totalPages = Math.ceil(data.length / pageSize);
+  const totalPages = Math.ceil(groupedData.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, data.length);
-  const currentData = data.slice(startIndex, endIndex);
+  const endIndex = Math.min(startIndex + pageSize, groupedData.length);
+  const currentData = groupedData.slice(startIndex, endIndex);
 
   // Handle page changes
   const goToPage = (page: number) => {
@@ -214,7 +249,6 @@ const Table: React.FC<TableProps> = ({
   // Handle Drive link
   const handleDriveLink = (id: string, field: 'form' | 'presentation' | 'report') => {
     // This would be integrated with the Drive link functionality
-    // For now, just simulate adding a link
     if (!editedData) return;
     
     const fileName = `${editedData.groupNo}_${editedData.rollNo}_${field}_drive.pdf`;
@@ -224,8 +258,13 @@ const Table: React.FC<TableProps> = ({
   };
 
   // Render a table cell based on whether it's being edited
-  const renderCell = (row: ProjectEntry, field: keyof ProjectEntry) => {
+  const renderCell = (row: ProjectEntry, field: keyof ProjectEntry, isFirstInGroup: boolean = false) => {
     const isEditing = row.id === editingRow;
+    
+    // For grouped fields, only show on the first row of the group
+    if (!isFirstInGroup && ['groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor'].includes(field)) {
+      return null;
+    }
     
     // Special handling for form, presentation, and report fields
     if (field === 'form' || field === 'presentation' || field === 'report') {
@@ -323,107 +362,122 @@ const Table: React.FC<TableProps> = ({
         accept=".pdf,.doc,.docx,.ppt,.pptx"
       />
       
-      <div className="table-container">
-        <table className="data-table">
+      <div className="table-container overflow-x-auto">
+        <table className="w-full table-auto border-collapse">
           <thead>
-            <tr>
-              <th className="table-header table-cell">Group No.</th>
-              <th className="table-header table-cell">Roll No.</th>
-              <th className="table-header table-cell">Name</th>
-              <th className="table-header table-cell">Email</th>
-              <th className="table-header table-cell">Phone No.</th>
-              <th className="table-header table-cell">Title</th>
-              <th className="table-header table-cell">Domain</th>
-              <th className="table-header table-cell">Faculty Mentor</th>
-              <th className="table-header table-cell">Industry Mentor</th>
-              <th className="table-header table-cell">Form</th>
-              <th className="table-header table-cell">Presentation</th>
-              <th className="table-header table-cell">Report</th>
-              <th className="table-header table-cell">Actions</th>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Group No.</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Roll No.</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Email</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Phone No.</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Title</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Domain</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Faculty Mentor</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Industry Mentor</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Form</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Presentation</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Report</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
             {currentData.length > 0 ? (
-              currentData.map((row) => (
-                <tr key={row.id} className="table-row">
-                  <td className="table-cell">{renderCell(row, 'groupNo')}</td>
-                  <td className="table-cell">{renderCell(row, 'rollNo')}</td>
-                  <td className="table-cell">{renderCell(row, 'name')}</td>
-                  <td className="table-cell">{renderCell(row, 'email')}</td>
-                  <td className="table-cell">{renderCell(row, 'phoneNo')}</td>
-                  <td className="table-cell">{renderCell(row, 'title')}</td>
-                  <td className="table-cell">{renderCell(row, 'domain')}</td>
-                  <td className="table-cell">{renderCell(row, 'facultyMentor')}</td>
-                  <td className="table-cell">{renderCell(row, 'industryMentor')}</td>
-                  <td className="table-cell">{renderCell(row, 'form')}</td>
-                  <td className="table-cell">{renderCell(row, 'presentation')}</td>
-                  <td className="table-cell">{renderCell(row, 'report')}</td>
-                  <td className="table-cell">
-                    {row.id === editingRow ? (
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 text-green-600 border-green-200"
-                          onClick={saveEditing}
-                        >
-                          <Save className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 text-gray-500 border-gray-200"
-                          onClick={cancelEditing}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 border-red-200"
-                          onClick={() => deleteRow(row.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : row.isNew ? (
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs text-green-600 border-green-200"
-                          onClick={() => startEditing(row.id)}
-                        >
-                          Add Entry
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 border-red-200"
-                          onClick={() => deleteRow(row.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 text-brand-blue border-brand-blue/20"
-                          onClick={() => startEditing(row.id)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
+              currentData.flatMap((group, groupIndex) => (
+                group.entries.map((row, rowIndex) => (
+                  <tr 
+                    key={row.id} 
+                    className={`border-b border-gray-200 ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                  >
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">
+                      {rowIndex === 0 ? renderCell(row, 'groupNo', true) : null}
+                    </td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'rollNo')}</td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'name')}</td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'email')}</td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'phoneNo')}</td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">
+                      {rowIndex === 0 ? renderCell(row, 'title', true) : null}
+                    </td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">
+                      {rowIndex === 0 ? renderCell(row, 'domain', true) : null}
+                    </td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">
+                      {rowIndex === 0 ? renderCell(row, 'facultyMentor', true) : null}
+                    </td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">
+                      {rowIndex === 0 ? renderCell(row, 'industryMentor', true) : null}
+                    </td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'form')}</td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'presentation')}</td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'report')}</td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">
+                      {row.id === editingRow ? (
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-green-600 border-green-200"
+                            onClick={saveEditing}
+                          >
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-gray-500 border-gray-200"
+                            onClick={cancelEditing}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 border-red-200"
+                            onClick={() => deleteRow(row.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : row.isNew ? (
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs text-green-600 border-green-200"
+                            onClick={() => startEditing(row.id)}
+                          >
+                            Add Entry
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 border-red-200"
+                            onClick={() => deleteRow(row.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-brand-blue border-brand-blue/20"
+                            onClick={() => startEditing(row.id)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
               ))
             ) : (
               <tr>
-                <td colSpan={13} className="table-cell text-center py-8 text-gray-500">
-                  No data available. Add a new entry to get started.
+                <td colSpan={13} className="px-4 py-8 text-center text-gray-500">
+                  No data available. Add a new entry or upload an Excel sheet to get started.
                 </td>
               </tr>
             )}

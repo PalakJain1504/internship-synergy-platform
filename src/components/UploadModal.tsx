@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Upload, FileSpreadsheet } from 'lucide-react';
+import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 import { Filter } from '@/lib/types';
 import { ProjectEntry } from './Table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -30,6 +31,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     facultyCoordinator: '',
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [previewData, setPreviewData] = useState<{
+    headers: string[];
+    rows: string[][];
+    missingRequired: boolean;
+  } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -42,6 +48,28 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
         return;
       }
       setFile(selectedFile);
+      
+      // Simulate reading Excel file and show preview
+      setTimeout(() => {
+        // This is just a simulation of Excel file reading
+        // In a real app, you'd use a library like xlsx to parse the file
+        const mockHeaders = ['groupNo', 'rollNo', 'name', 'email', 'phoneNo', 'title', 'domain', 'facultyMentor', 'industryMentor'];
+        const mockRows = [
+          ['G1', 'R101', 'John Doe', 'john@example.com', '9876543210', 'AI Project', 'Machine Learning', 'Dr. Sharma', 'Mr. Patel'],
+          ['G1', 'R102', 'Jane Smith', 'jane@example.com', '9876543211', '', '', '', ''],
+          ['G2', 'R103', 'Alex Kim', 'alex@example.com', '9876543212', 'Web App', 'Web Development', 'Dr. Singh', 'Ms. Gupta'],
+        ];
+        
+        // Check if required fields are present
+        const requiredFields = ['groupNo', 'rollNo', 'name'];
+        const hasAllRequired = requiredFields.every(field => mockHeaders.includes(field));
+        
+        setPreviewData({
+          headers: mockHeaders,
+          rows: mockRows,
+          missingRequired: !hasAllRequired
+        });
+      }, 500);
     }
   };
 
@@ -61,33 +89,41 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       return;
     }
 
+    if (previewData?.missingRequired) {
+      toast.error('The Excel file is missing required columns (groupNo, rollNo, name)');
+      return;
+    }
+
     setIsUploading(true);
 
-    // In a real application, you would process the Excel file here
-    // For this demo, we'll just simulate an upload with mock data
+    // Process the Excel data (simulated)
     setTimeout(() => {
-      // Create sample entries from the "upload"
-      const mockEntries: ProjectEntry[] = Array.from({ length: 5 }).map((_, index) => ({
-        id: `upload-${Date.now()}-${index}`,
-        groupNo: `G${index + 1}`,
-        rollNo: `R0${index + 1}`,
-        name: `Student ${index + 1}`,
-        email: `student${index + 1}@example.com`,
-        phoneNo: `123456789${index}`,
-        title: `Project Title ${index + 1}`,
-        domain: `Domain ${index % 3 + 1}`,
-        facultyMentor: `Dr. Faculty ${index % 4 + 1}`,
-        industryMentor: `Mentor ${index % 3 + 1}`,
-        form: index % 2 === 0 ? `form_group${index + 1}.pdf` : '',
-        presentation: index % 3 === 0 ? `presentation_group${index + 1}.pdf` : '',
-        report: index % 4 === 0 ? `report_group${index + 1}.pdf` : '',
-        ...metadata,
-      }));
+      // Create entries from the preview data
+      const entries: ProjectEntry[] = previewData?.rows.map((row, index) => {
+        const entry: ProjectEntry = {
+          id: `upload-${Date.now()}-${index}`,
+          groupNo: row[0] || '',
+          rollNo: row[1] || '',
+          name: row[2] || '',
+          email: row[3] || '',
+          phoneNo: row[4] || '',
+          title: row[5] || '',
+          domain: row[6] || '',
+          facultyMentor: row[7] || '',
+          industryMentor: row[8] || '',
+          form: '',
+          presentation: '',
+          report: '',
+          ...metadata,
+        };
+        return entry;
+      }) || [];
 
-      onUpload(mockEntries, metadata);
+      onUpload(entries, metadata);
       setIsUploading(false);
       setFile(null);
-      toast.success(`Successfully uploaded ${mockEntries.length} entries`);
+      setPreviewData(null);
+      toast.success(`Successfully uploaded ${entries.length} entries`);
       onClose();
     }, 1500);
   };
@@ -96,7 +132,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 animate-scale-in">
+      <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full p-6 animate-scale-in max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Upload Excel Sheet</h2>
           <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500">
@@ -142,6 +178,65 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
               {file ? 'Change File' : 'Select File'}
             </Label>
           </div>
+
+          {previewData && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-gray-700">File Preview</h3>
+              
+              {previewData.missingRequired && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Missing Required Fields</AlertTitle>
+                  <AlertDescription>
+                    Your Excel file must include the following required columns: 'groupNo', 'rollNo', and 'name'.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="border rounded-md overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {previewData.headers.map((header, index) => (
+                        <th 
+                          key={index}
+                          className={`px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                            ['groupNo', 'rollNo', 'name'].includes(header) ? 'bg-yellow-50' : ''
+                          }`}
+                        >
+                          {header}
+                          {['groupNo', 'rollNo', 'name'].includes(header) && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {previewData.rows.slice(0, 3).map((row, rowIndex) => (
+                      <tr key={rowIndex}>
+                        {row.map((cell, cellIndex) => (
+                          <td 
+                            key={cellIndex}
+                            className="px-4 py-2 text-sm text-gray-600 whitespace-nowrap max-w-[100px] truncate"
+                            title={cell}
+                          >
+                            {cell || <span className="text-gray-400">Empty</span>}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <p className="text-xs text-gray-500">
+                Showing preview of first 3 rows from your Excel file.
+                Fields marked with <span className="text-red-500">*</span> are required.
+                Missing values for optional fields can be filled manually later.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-700">Project Metadata</h3>
@@ -234,7 +329,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
             <Button
               className="bg-brand-blue hover:bg-brand-darkBlue"
               onClick={handleUpload}
-              disabled={isUploading}
+              disabled={isUploading || !file || (previewData?.missingRequired || false)}
             >
               {isUploading ? (
                 <>

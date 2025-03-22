@@ -1,3 +1,4 @@
+
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import jsPDF from "jspdf";
@@ -23,52 +24,58 @@ export function generateSampleProjects(count = 70): ProjectData[] {
     'Dr. Anshu'
   ];
 
-  return Array.from({ length: count }).map((_, index) => ({
-    id: `project-${index + 1}`,
-    groupNo: `G${Math.floor(index / 3) + 1}`,
-    rollNo: `R${100 + index}`,
-    name: `Student ${index + 1}`,
-    email: `student${index + 1}@example.com`,
-    phoneNo: `98765${index.toString().padStart(5, "0")}`,
-    title: `Interactive ${
-      index % 3 === 0
-        ? "Web Application"
-        : index % 3 === 1
-        ? "Mobile App"
-        : "ML Model"
-    } - ${index + 1}`,
-    domain:
-      index % 5 === 0
+  return Array.from({ length: count }).map((_, index) => {
+    // Group 3 students together by their group number
+    const groupNo = `G${Math.floor(index / 3) + 1}`;
+    const groupIndex = Math.floor(index / 3);
+    
+    // Generate consistent data for students in the same group
+    const title = `${
+      groupIndex % 5 === 0
+        ? "AI-Powered Web"
+        : groupIndex % 5 === 1
+        ? "Smart Mobile App"
+        : groupIndex % 5 === 2
+        ? "ML Project"
+        : groupIndex % 5 === 3
+        ? "IoT Solution"
+        : "Blockchain App"
+    } - ${groupIndex + 1}`;
+    
+    const domain =
+      groupIndex % 5 === 0
         ? "Web Development"
-        : index % 5 === 1
+        : groupIndex % 5 === 1
         ? "Mobile Development"
-        : index % 5 === 2
+        : groupIndex % 5 === 2
         ? "Machine Learning"
-        : index % 5 === 3
-        ? "Blockchain"
-        : "IoT",
-    facultyMentor:
-      index % 4 === 0
-        ? "Dr. Sharma"
-        : index % 4 === 1
-        ? "Prof. Kumar"
-        : index % 4 === 2
-        ? "Dr. Patel"
-        : "Prof. Singh",
-    industryMentor:
-      index % 3 === 0
-        ? "Mr. Jain"
-        : index % 3 === 1
-        ? "Ms. Gupta"
-        : "Mr. Verma",
-    form: index % 2 === 0 ? "form.pdf" : "",
-    presentation: index % 3 === 0 ? "presentation.pptx" : "",
-    report: index % 4 === 0 ? "report.pdf" : "",
-    year: years[index % years.length],
-    semester: semesters[index % semesters.length],
-    course: courses[index % courses.length],
-    facultyCoordinator: facultyCoordinators[index % facultyCoordinators.length],
-  }));
+        : groupIndex % 5 === 3
+        ? "IoT"
+        : "Blockchain";
+    
+    const facultyMentor = facultyMentors[groupIndex % facultyMentors.length];
+    const industryMentor = industryMentors[groupIndex % industryMentors.length];
+    
+    return {
+      id: `project-${index + 1}`,
+      groupNo,
+      rollNo: `R${100 + index}`,
+      name: `Student ${index + 1}`,
+      email: `student${index + 1}@example.com`,
+      phoneNo: `98765${index.toString().padStart(5, "0")}`,
+      title,
+      domain,
+      facultyMentor,
+      industryMentor,
+      form: index % 2 === 0 ? `form_group${groupIndex + 1}.pdf` : "",
+      presentation: index % 3 === 0 ? `presentation_group${groupIndex + 1}.pdf` : "",
+      report: index % 4 === 0 ? `report_group${groupIndex + 1}.pdf` : "",
+      year: years[groupIndex % years.length],
+      semester: semesters[groupIndex % semesters.length],
+      course: courses[groupIndex % courses.length],
+      facultyCoordinator: facultyCoordinators[groupIndex % facultyCoordinators.length],
+    };
+  });
 }
 
 export function filterProjects(
@@ -129,25 +136,86 @@ export function exportTableToPDF(
     });
   }
 
-  // Prepare table data
-  const tableData = data.map((item) => [
-    item.groupNo,
-    item.rollNo,
-    item.name,
-    item.title,
-    item.domain,
-    item.facultyMentor,
-    item.industryMentor,
-    item.form ? "Yes" : "No",
-    item.presentation ? "Yes" : "No",
-    item.report ? "Yes" : "No",
-  ]);
+  // Group data by group number for the report
+  type GroupedData = {
+    [key: string]: {
+      groupNo: string;
+      title: string;
+      domain: string;
+      facultyMentor: string;
+      industryMentor: string;
+      students: {
+        rollNo: string;
+        name: string;
+        email: string;
+        phoneNo: string;
+      }[];
+      form: string;
+      presentation: string;
+      report: string;
+    }
+  };
+  
+  const groupedData: GroupedData = {};
+  
+  data.forEach(item => {
+    if (!groupedData[item.groupNo]) {
+      groupedData[item.groupNo] = {
+        groupNo: item.groupNo,
+        title: item.title,
+        domain: item.domain,
+        facultyMentor: item.facultyMentor,
+        industryMentor: item.industryMentor,
+        students: [],
+        form: item.form,
+        presentation: item.presentation,
+        report: item.report
+      };
+    }
+    
+    groupedData[item.groupNo].students.push({
+      rollNo: item.rollNo,
+      name: item.name,
+      email: item.email,
+      phoneNo: item.phoneNo
+    });
+    
+    // Update file status (in case different students have uploaded different files)
+    if (item.form && !groupedData[item.groupNo].form) {
+      groupedData[item.groupNo].form = item.form;
+    }
+    if (item.presentation && !groupedData[item.groupNo].presentation) {
+      groupedData[item.groupNo].presentation = item.presentation;
+    }
+    if (item.report && !groupedData[item.groupNo].report) {
+      groupedData[item.groupNo].report = item.report;
+    }
+  });
+  
+  // Prepare table data from grouped data
+  const tableData = Object.values(groupedData).map(group => {
+    const studentNames = group.students.map(s => s.name).join(", ");
+    const studentRolls = group.students.map(s => s.rollNo).join(", ");
+    
+    return [
+      group.groupNo,
+      studentRolls,
+      studentNames,
+      group.title,
+      group.domain,
+      group.facultyMentor,
+      group.industryMentor,
+      group.form ? "Yes" : "No",
+      group.presentation ? "Yes" : "No",
+      group.report ? "Yes" : "No",
+    ];
+  });
 
   // Define table columns
   const tableColumns = [
     "Group No.",
-    "Roll No.",
-    "Name",
+    "Roll Numbers",
+    "Student Names",
     "Title",
     "Domain",
     "Faculty Mentor",
@@ -178,20 +246,20 @@ export function exportTableToPDF(
     },
     columnStyles: {
       0: { cellWidth: 60 },
-      1: { cellWidth: 60 },
-      2: { cellWidth: 80 },
-      3: { cellWidth: 120 },
+      1: { cellWidth: 80 },
+      2: { cellWidth: 100 },
+      3: { cellWidth: 100 },
       4: { cellWidth: 80 },
       5: { cellWidth: 80 },
       6: { cellWidth: 80 },
-      7: { cellWidth: 40 },
-      8: { cellWidth: 40 },
-      9: { cellWidth: 40 },
+      7: { cellWidth: 30 },
+      8: { cellWidth: 30 },
+      9: { cellWidth: 30 },
     },
   });
 
   // Add date and page numbers
-  const totalPages = (doc as any).internal.getNumberOfPages();
+  const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
@@ -210,4 +278,9 @@ export function exportTableToPDF(
 
   // Save the PDF
   doc.save("project-portal-report.pdf");
+}
+
+// Function to add tabs to the UI
+export function addTabs(tab1: string, tab2: string) {
+  return [tab1, tab2];
 }
