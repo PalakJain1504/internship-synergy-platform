@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { ProjectData, Filter } from '@/lib/types';
 
 // Initialize Supabase client
-// Note: In a real app, these would be environment variables
+// IMPORTANT: Replace these with your actual Supabase credentials
 const supabaseUrl = 'https://your-supabase-project.supabase.co';
 const supabaseKey = 'your-supabase-anon-key';
 
+// Create a client with your Supabase credentials
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Project data functions
@@ -109,4 +110,15 @@ export async function deleteFile(path: string) {
     console.error('Error deleting file:', error);
     throw error;
   }
+}
+
+// Function to parse Excel data
+export async function parseExcelData(file: File) {
+  // This would normally use a library like xlsx or exceljs to parse the Excel file
+  // For now, this is a placeholder that would be replaced with actual implementation
+  console.log('Parsing Excel file:', file.name);
+  
+  // In a real implementation, this would return the parsed data
+  // For now, it returns an empty array
+  return [];
 }
