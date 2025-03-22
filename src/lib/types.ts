@@ -24,9 +24,25 @@ export interface ProjectData {
   facultyCoordinator: string;
 }
 
+export interface InternshipData {
+  id: string;
+  rollNo: string;
+  name: string;
+  program: string;
+  organization: string;
+  dates: string;
+  noc: string;
+  offerLetter: string;
+  pop: string;
+  year: string;
+  semester: string;
+  course: string;
+  [key: string]: string; // For dynamic attendance columns
+}
+
 export interface Filter {
   year: string;
   semester: string;
   course: string;
-  facultyCoordinator: string;
+  facultyCoordinator?: string;
 }

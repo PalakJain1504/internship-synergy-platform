@@ -1,9 +1,8 @@
-
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { ProjectData, Filter } from "./types";
+import { ProjectData, Filter, InternshipData } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -25,11 +24,9 @@ export function generateSampleProjects(count = 70): ProjectData[] {
   ];
 
   return Array.from({ length: count }).map((_, index) => {
-    // Group 3 students together by their group number
     const groupNo = `G${Math.floor(index / 3) + 1}`;
     const groupIndex = Math.floor(index / 3);
     
-    // Generate consistent data for students in the same group
     const title = `${
       groupIndex % 5 === 0
         ? "AI-Powered Web"
@@ -78,6 +75,33 @@ export function generateSampleProjects(count = 70): ProjectData[] {
   });
 }
 
+// Function to generate sample internship data
+export function generateSampleInternships(count = 50): InternshipData[] {
+  const programs = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
+  const organizations = ['Microsoft', 'Google', 'Amazon', 'IBM', 'Infosys', 'TCS', 'Wipro', 'Accenture'];
+  const years = ['4','3', '2', '1'];
+  const semesters = ['8','7','6','5','4','3','2','1'];
+
+  return Array.from({ length: count }).map((_, index) => {
+    return {
+      id: `internship-${index + 1}`,
+      rollNo: `R${100 + index}`,
+      name: `Student ${index + 1}`,
+      program: programs[index % programs.length],
+      organization: organizations[index % organizations.length],
+      dates: `${new Date().getMonth() + 1}/1/2023 - ${new Date().getMonth() + 2}/1/2023`,
+      noc: index % 2 === 0 ? `noc_${index + 1}.pdf` : "",
+      offerLetter: index % 3 === 0 ? `offer_${index + 1}.pdf` : "",
+      pop: index % 4 === 0 ? `pop_${index + 1}.pdf` : "",
+      year: years[index % years.length],
+      semester: semesters[index % semesters.length],
+      course: programs[index % programs.length],
+      ...(index % 5 === 0 ? { "Attendance May": `attendance_may_${index + 1}.pdf` } : {}),
+      ...(index % 7 === 0 ? { "Attendance June": `attendance_june_${index + 1}.pdf` } : {})
+    };
+  });
+}
+
 export function filterProjects(
   projects: ProjectData[],
   filters: Filter
@@ -100,6 +124,27 @@ export function filterProjects(
                                     project.facultyCoordinator === filters.facultyCoordinator;
 
     return yearMatch && semesterMatch && courseMatch && facultyCoordinatorMatch;
+  });
+}
+
+export function filterInternships(
+  internships: InternshipData[],
+  filters: Filter
+): InternshipData[] {
+  return internships.filter((internship) => {
+    const yearMatch = !filters.year || 
+                      filters.year === 'all-years' || 
+                      internship.year === filters.year;
+                      
+    const semesterMatch = !filters.semester || 
+                          filters.semester === 'all-semesters' || 
+                          internship.semester === filters.semester;
+                          
+    const courseMatch = !filters.course || 
+                        filters.course === 'all-courses' || 
+                        internship.course === filters.course;
+
+    return yearMatch && semesterMatch && courseMatch;
   });
 }
 
@@ -280,6 +325,122 @@ export function exportTableToPDF(
 
   // Save the PDF
   doc.save("project-portal-report.pdf");
+}
+
+export function exportInternshipTableToPDF(
+  data: InternshipData[],
+  filters: Filter,
+  title: string
+) {
+  const doc = new jsPDF("landscape", "pt", "a4");
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 40;
+
+  // Add title
+  doc.setFontSize(18);
+  doc.text(title, pageWidth / 2, margin, { align: "center" });
+
+  // Add filters
+  doc.setFontSize(10);
+  const filterTexts = [
+    filters.year ? `Year: ${filters.year}` : "",
+    filters.semester ? `Semester: ${filters.semester}` : "",
+    filters.course ? `Course: ${filters.course}` : "",
+  ].filter(Boolean);
+
+  if (filterTexts.length > 0) {
+    doc.setFontSize(10);
+    doc.text("Filters:", margin, margin + 30);
+    filterTexts.forEach((text, i) => {
+      doc.text(text, margin, margin + 45 + i * 15);
+    });
+  }
+  
+  // Get all columns including dynamic ones
+  const staticColumns = [
+    "S.No.", "Roll No.", "Student Name", "Program", "Organization", 
+    "Dates", "NOC", "Offer Letter", "PoP"
+  ];
+  
+  // Find all dynamic columns (attendance, etc.)
+  const dynamicColumns: string[] = [];
+  data.forEach(item => {
+    Object.keys(item).forEach(key => {
+      if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "course"].includes(key) && 
+          !dynamicColumns.includes(key)) {
+        dynamicColumns.push(key);
+      }
+    });
+  });
+  
+  const allColumns = [...staticColumns, ...dynamicColumns];
+
+  // Prepare table data
+  const tableData = data.map((internship, index) => {
+    const row = [
+      (index + 1).toString(),
+      internship.rollNo,
+      internship.name,
+      internship.program,
+      internship.organization,
+      internship.dates,
+      internship.noc ? "Yes" : "No",
+      internship.offerLetter ? "Yes" : "No",
+      internship.pop ? "Yes" : "No",
+    ];
+    
+    // Add dynamic column values
+    dynamicColumns.forEach(col => {
+      row.push(internship[col] ? "Yes" : "No");
+    });
+    
+    return row;
+  });
+
+  // Add table to PDF
+  autoTable(doc, {
+    head: [allColumns],
+    body: tableData,
+    startY: margin + 90,
+    margin: { top: margin, right: margin, bottom: margin, left: margin },
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+      lineColor: [200, 200, 200],
+    },
+    headStyles: {
+      fillColor: [30, 94, 170],
+      textColor: 255,
+      fontStyle: "bold",
+    },
+    alternateRowStyles: {
+      fillColor: [245, 247, 250],
+    },
+  });
+
+  // Add date and page numbers
+  // Fix the getNumberOfPages method issue
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.text(
+      `Date: ${new Date().toLocaleDateString()}`,
+      margin,
+      pageHeight - margin / 2
+    );
+    doc.text(
+      `Page ${i} of ${totalPages}`,
+      pageWidth - margin,
+      pageHeight - margin / 2,
+      { align: "right" }
+    );
+  }
+
+  // Save the PDF
+  doc.save("internship-portal-report.pdf");
 }
 
 // Function to add tabs to the UI

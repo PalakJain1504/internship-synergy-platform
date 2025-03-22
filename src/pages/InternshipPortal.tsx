@@ -3,34 +3,34 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
-import FilterSection from '@/components/FilterSection';
-import Table, { ProjectEntry } from '@/components/Table';
+import InternshipFilterSection from '@/components/InternshipFilterSection';
+import InternshipTable, { InternshipEntry } from '@/components/InternshipTable';
 import FileUpload from '@/components/FileUpload';
 import UploadModal from '@/components/UploadModal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Download, Upload, FileUp, DatabaseIcon, InfoIcon } from 'lucide-react';
-import { generateSampleProjects, filterProjects, exportTableToPDF } from '@/lib/utils';
+import { Download, Upload, FileUp, InfoIcon } from 'lucide-react';
+import { generateSampleInternships, filterInternships, exportInternshipTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Filter } from '@/lib/types';
+import { Filter, InternshipData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const ProjectPortal = () => {
+const InternshipPortal = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [allProjects, setAllProjects] = useState<ProjectEntry[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<ProjectEntry[]>([]);
+  const [allInternships, setAllInternships] = useState<InternshipEntry[]>([]);
+  const [filteredInternships, setFilteredInternships] = useState<InternshipEntry[]>([]);
   const [currentFilters, setCurrentFilters] = useState<Filter>({
     year: '',
     semester: '',
     course: '',
-    facultyCoordinator: '',
   });
   const [pageSize, setPageSize] = useState(50);
   const [driveConnected, setDriveConnected] = useState(false);
   const [showDemoAlert, setShowDemoAlert] = useState(true);
+  const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
 
   useEffect(() => {
     // If not authenticated, redirect to login
@@ -39,9 +39,21 @@ const ProjectPortal = () => {
     }
 
     // Generate sample data
-    const sampleData = generateSampleProjects(70).map(p => ({ ...p } as ProjectEntry));
-    setAllProjects(sampleData);
-    setFilteredProjects(sampleData);
+    const sampleData = generateSampleInternships(40).map(p => ({ ...p } as InternshipEntry));
+    
+    // Extract any dynamic columns from the data
+    const extraColumns = new Set<string>();
+    sampleData.forEach(item => {
+      Object.keys(item).forEach(key => {
+        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "course", "isEditing", "isNew"].includes(key)) {
+          extraColumns.add(key);
+        }
+      });
+    });
+    
+    setDynamicColumns(Array.from(extraColumns));
+    setAllInternships(sampleData);
+    setFilteredInternships(sampleData);
     
     // Simulate loading
     setTimeout(() => setIsLoaded(true), 500);
@@ -50,53 +62,53 @@ const ProjectPortal = () => {
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    // Apply filters to projects
-    const filtered = filterProjects(allProjects, filters);
-    setFilteredProjects(filtered);
+    // Apply filters to internships
+    const filtered = filterInternships(allInternships, filters);
+    setFilteredInternships(filtered);
   };
 
-  const handleDataChange = (newData: ProjectEntry[]) => {
-    setFilteredProjects(newData);
+  const handleDataChange = (newData: InternshipEntry[]) => {
+    setFilteredInternships(newData);
     
-    // Update the all projects list with the changes
-    const updatedAllProjects = allProjects.map(project => {
-      const updatedProject = newData.find(p => p.id === project.id);
-      return updatedProject || project;
+    // Update the all internships list with the changes
+    const updatedAllInternships = allInternships.map(internship => {
+      const updatedInternship = newData.find(p => p.id === internship.id);
+      return updatedInternship || internship;
     });
     
-    // Add any new projects that weren't in the original list
-    newData.forEach(project => {
-      if (!updatedAllProjects.some(p => p.id === project.id)) {
-        updatedAllProjects.push(project);
+    // Add any new internships that weren't in the original list
+    newData.forEach(internship => {
+      if (!updatedAllInternships.some(p => p.id === internship.id)) {
+        updatedAllInternships.push(internship);
       }
     });
     
-    setAllProjects(updatedAllProjects);
+    setAllInternships(updatedAllInternships);
   };
 
-  const handleUpload = (entries: ProjectEntry[], metadata: Filter) => {
+  const handleUpload = (entries: InternshipEntry[], metadata: Filter) => {
     // Clear demo data if requested
-    const updatedProjects = showDemoAlert ? [...allProjects, ...entries] : entries;
+    const updatedInternships = showDemoAlert ? [...allInternships, ...entries] : entries;
     
     if (!showDemoAlert) {
       toast.success('Demo data cleared. Only uploaded data will be shown.');
     }
     
-    setAllProjects(updatedProjects);
+    setAllInternships(updatedInternships);
     setCurrentFilters(metadata);
     
     // Apply current filters to updated data
-    const filtered = filterProjects(updatedProjects, metadata);
-    setFilteredProjects(filtered);
+    const filtered = filterInternships(updatedInternships, metadata);
+    setFilteredInternships(filtered);
     
     setShowDemoAlert(false);
   };
 
   const handleExportPDF = () => {
-    exportTableToPDF(
-      filteredProjects,
+    exportInternshipTableToPDF(
+      filteredInternships,
       currentFilters,
-      'Project Portal - Data Export'
+      'Internship Portal - Data Export'
     );
     toast.success('PDF exported successfully');
   };
@@ -108,14 +120,31 @@ const ProjectPortal = () => {
   };
 
   const clearDemoData = () => {
-    setAllProjects([]);
-    setFilteredProjects([]);
+    setAllInternships([]);
+    setFilteredInternships([]);
     setShowDemoAlert(false);
     toast.success('Demo data cleared. System ready for fresh data upload.');
   };
 
   const handleAddColumn = (columnName: string) => {
-    toast.success(`Added new column: ${columnName}`);
+    if (!dynamicColumns.includes(columnName)) {
+      setDynamicColumns([...dynamicColumns, columnName]);
+      toast.success(`Added new column: ${columnName}`);
+      
+      // Add the column to all existing data
+      const updatedInternships = allInternships.map(internship => ({
+        ...internship,
+        [columnName]: ''
+      }));
+      setAllInternships(updatedInternships);
+      
+      // Update filtered list too
+      const updatedFiltered = filteredInternships.map(internship => ({
+        ...internship,
+        [columnName]: ''
+      }));
+      setFilteredInternships(updatedFiltered);
+    }
   };
 
   if (!isAuthenticated || !isLoaded) {
@@ -162,9 +191,9 @@ const ProjectPortal = () => {
         >
           <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">Project Portal</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">Internship Portal</h1>
               <p className="text-gray-500 text-sm">
-                Manage and track student projects
+                Manage and track student internships
               </p>
             </div>
             
@@ -216,13 +245,13 @@ const ProjectPortal = () => {
           )}
           
           <motion.div variants={itemVariants} className="mb-8">
-            <FilterSection onFilterChange={handleFilterChange} />
+            <InternshipFilterSection onFilterChange={handleFilterChange} />
           </motion.div>
           
           <motion.div variants={itemVariants} className="mb-8">
             <FileUpload 
               onUploadComplete={handleDriveConnect} 
-              portalType="project"
+              portalType="internship"
               onAddColumn={handleAddColumn}
             />
           </motion.div>
@@ -230,11 +259,12 @@ const ProjectPortal = () => {
           <motion.div variants={itemVariants}>
             <div className="overflow-hidden border border-gray-200 rounded-lg bg-white">
               <div className="w-full overflow-x-auto">
-                <Table
-                  data={filteredProjects}
+                <InternshipTable
+                  data={filteredInternships}
                   onDataChange={handleDataChange}
                   pageSize={pageSize}
                   onPageSizeChange={setPageSize}
+                  dynamicColumns={dynamicColumns}
                 />
               </div>
             </div>
@@ -251,4 +281,4 @@ const ProjectPortal = () => {
   );
 };
 
-export default ProjectPortal;
+export default InternshipPortal;

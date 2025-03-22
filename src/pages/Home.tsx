@@ -1,133 +1,180 @@
 
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { BarChart3, BookOpen } from 'lucide-react';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { Folder, FileText, ChevronRight, GraduationCap, Users, Briefcase } from "lucide-react";
 
 const Home = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
-
-  useEffect(() => {
-    // If not authenticated, redirect to login
-    if (!isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, navigate]);
-
-  if (!isAuthenticated) {
-    return null; // Won't render during redirect
-  }
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-        staggerChildren: 0.15
-      }
-    }
-  };
-  
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0, 
-      opacity: 1,
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
-    }
-  };
-
-  const cardVariants = {
-    hidden: { scale: 0.95, opacity: 0 },
-    visible: { 
-      scale: 1, 
-      opacity: 1,
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
-    },
-    hover: {
-      scale: 1.02,
-      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-      transition: { duration: 0.2 }
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar title="Progress Port" />
       
-      <main className="page-container">
-        <motion.div
-          className="w-full max-w-5xl mx-auto py-8 px-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={itemVariants} className="text-center mb-12">
-            <div className="inline-block p-4 rounded-full bg-brand-blue/10 mb-4">
-              <img 
-                src="/placeholder.svg" 
-                alt="Logo" 
-                className="h-24 w-24 object-contain"
-              />
+      <main className="py-8 px-4 md:px-8 max-w-7xl mx-auto">
+        <div className="flex flex-col space-y-8">
+          <section>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6"
+            >
+              <h1 className="text-3xl font-bold text-gray-900">Welcome to Progress Port</h1>
+              <p className="text-gray-600 mt-2">
+                Manage and track student projects, internships, and academic progress
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <Card className="h-full">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center text-brand-blue">
+                      <Folder className="h-5 w-5 mr-2" />
+                      <span>Project Portal</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Manage student projects across courses
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Track project submissions, forms, reports, and presentations. Filter by course, year, semester, and faculty.
+                    </p>
+                    <Button 
+                      variant="default" 
+                      className="bg-brand-blue hover:bg-brand-darkBlue w-full"
+                      onClick={() => navigate('/project-portal')}
+                    >
+                      Access Project Portal
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Card className="h-full">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center text-green-600">
+                      <Briefcase className="h-5 w-5 mr-2" />
+                      <span>Internship Portal</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Manage student internships and industry experience
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Track internship documentation, attendance, and final reports. Monitor student progress at partner organizations.
+                    </p>
+                    <Button 
+                      variant="default" 
+                      className="bg-green-600 hover:bg-green-700 w-full"
+                      onClick={() => navigate('/internship-portal')}
+                    >
+                      Access Internship Portal
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <Card className="h-full">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center text-purple-600">
+                      <GraduationCap className="h-5 w-5 mr-2" />
+                      <span>Academic Portal</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Track academic progress and requirements
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Monitor course completions, credit requirements, and academic milestones. Generate progress reports.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="text-purple-600 border-purple-200 hover:bg-purple-50 w-full"
+                      disabled
+                    >
+                      Coming Soon
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome, {user?.name}</h1>
-            <p className="text-gray-500">
-              Access and manage student projects and internships
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          </section>
+
+          <section>
             <motion.div
-              variants={cardVariants}
-              whileHover="hover"
-              className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="mb-6"
             >
-              <div className="p-8">
-                <div className="w-12 h-12 bg-brand-blue/10 rounded-lg flex items-center justify-center mb-6">
-                  <BarChart3 className="h-6 w-6 text-brand-blue" />
-                </div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Project Portal</h2>
-                <p className="text-gray-500 mb-6">
-                  View and assess student projects, track milestones, and provide guidance.
-                </p>
-                <Button
-                  onClick={() => navigate('/project-portal')}
-                  className="w-full bg-brand-blue hover:bg-brand-darkBlue"
-                >
-                  Access Project Portal
-                </Button>
-              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Recent Activity</h2>
+              <p className="text-gray-600 mt-1">
+                Recent updates and activity in the system
+              </p>
             </motion.div>
-            
+
             <motion.div
-              variants={cardVariants}
-              whileHover="hover"
-              className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
             >
-              <div className="p-8">
-                <div className="w-12 h-12 bg-brand-red/10 rounded-lg flex items-center justify-center mb-6">
-                  <BookOpen className="h-6 w-6 text-brand-red" />
-                </div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Internship Portal</h2>
-                <p className="text-gray-500 mb-6">
-                  Oversee student internships, verify reports, and evaluate progress.
-                </p>
-                <Button
-                  disabled={true}
-                  variant="outline"
-                  className="w-full border-gray-200 text-gray-500"
-                >
-                  Coming Soon
-                </Button>
-              </div>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">System Updates</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    <li className="p-3 bg-gray-50 rounded-md flex items-start">
+                      <FileText className="h-5 w-5 text-brand-blue mr-3 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Project Portal Launched</p>
+                        <p className="text-xs text-gray-500">Added new features for tracking project submissions</p>
+                      </div>
+                    </li>
+                    <li className="p-3 bg-gray-50 rounded-md flex items-start">
+                      <FileText className="h-5 w-5 text-green-600 mr-3 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Internship Portal Released</p>
+                        <p className="text-xs text-gray-500">New portal for managing student internships</p>
+                      </div>
+                    </li>
+                    <li className="p-3 bg-gray-50 rounded-md flex items-start">
+                      <Users className="h-5 w-5 text-purple-600 mr-3 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">User Management Updates</p>
+                        <p className="text-xs text-gray-500">Improved role-based access controls</p>
+                      </div>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
             </motion.div>
-          </div>
-        </motion.div>
+          </section>
+        </div>
       </main>
     </div>
   );
