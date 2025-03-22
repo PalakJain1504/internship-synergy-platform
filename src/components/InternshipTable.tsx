@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft,
@@ -24,12 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { InternshipData } from '@/lib/types';
-
-export interface InternshipEntry extends InternshipData {
-  isEditing?: boolean;
-  isNew?: boolean;
-}
+import { InternshipData, InternshipEntry } from '@/lib/types';
 
 interface InternshipTableProps {
   data: InternshipEntry[];
@@ -135,8 +129,8 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       year: '',
       semester: '',
       course: '',
-      isEditing: true,
-      isNew: true,
+      isEditing: false,
+      isNew: false,
     };
     
     // Add dynamic columns with empty values
@@ -144,9 +138,15 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       newRow[col] = '';
     });
     
-    onDataChange([...data, newRow]);
+    const completedRow: InternshipEntry = {
+      ...newRow,
+      isEditing: true,
+      isNew: true
+    };
+    
+    onDataChange([...data, completedRow]);
     setEditingRow(newId);
-    setEditedData(newRow);
+    setEditedData(completedRow);
     
     // Auto-scroll to the bottom of the table
     setTimeout(() => {

@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import InternshipFilterSection from '@/components/InternshipFilterSection';
-import InternshipTable, { InternshipEntry } from '@/components/InternshipTable';
+import InternshipTable from '@/components/InternshipTable';
 import FileUpload from '@/components/FileUpload';
 import UploadModal from '@/components/UploadModal';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import { toast } from 'sonner';
 import { Download, Upload, FileUp, InfoIcon } from 'lucide-react';
 import { generateSampleInternships, filterInternships, exportInternshipTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Filter, InternshipData } from '@/lib/types';
+import { Filter, InternshipEntry } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const InternshipPortal = () => {
@@ -33,19 +32,16 @@ const InternshipPortal = () => {
   const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
 
   useEffect(() => {
-    // If not authenticated, redirect to login
     if (!isAuthenticated) {
       navigate('/login');
     }
 
-    // Generate sample data
     const sampleData = generateSampleInternships(40).map(p => ({ ...p } as InternshipEntry));
     
-    // Extract any dynamic columns from the data
     const extraColumns = new Set<string>();
     sampleData.forEach(item => {
       Object.keys(item).forEach(key => {
-        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "course", "isEditing", "isNew"].includes(key)) {
+        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "course"].includes(key)) {
           extraColumns.add(key);
         }
       });
@@ -55,14 +51,12 @@ const InternshipPortal = () => {
     setAllInternships(sampleData);
     setFilteredInternships(sampleData);
     
-    // Simulate loading
     setTimeout(() => setIsLoaded(true), 500);
   }, [isAuthenticated, navigate]);
 
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    // Apply filters to internships
     const filtered = filterInternships(allInternships, filters);
     setFilteredInternships(filtered);
   };
@@ -70,13 +64,11 @@ const InternshipPortal = () => {
   const handleDataChange = (newData: InternshipEntry[]) => {
     setFilteredInternships(newData);
     
-    // Update the all internships list with the changes
     const updatedAllInternships = allInternships.map(internship => {
       const updatedInternship = newData.find(p => p.id === internship.id);
       return updatedInternship || internship;
     });
     
-    // Add any new internships that weren't in the original list
     newData.forEach(internship => {
       if (!updatedAllInternships.some(p => p.id === internship.id)) {
         updatedAllInternships.push(internship);
@@ -87,7 +79,6 @@ const InternshipPortal = () => {
   };
 
   const handleUpload = (entries: InternshipEntry[], metadata: Filter) => {
-    // Clear demo data if requested
     const updatedInternships = showDemoAlert ? [...allInternships, ...entries] : entries;
     
     if (!showDemoAlert) {
@@ -97,7 +88,6 @@ const InternshipPortal = () => {
     setAllInternships(updatedInternships);
     setCurrentFilters(metadata);
     
-    // Apply current filters to updated data
     const filtered = filterInternships(updatedInternships, metadata);
     setFilteredInternships(filtered);
     
@@ -131,14 +121,12 @@ const InternshipPortal = () => {
       setDynamicColumns([...dynamicColumns, columnName]);
       toast.success(`Added new column: ${columnName}`);
       
-      // Add the column to all existing data
       const updatedInternships = allInternships.map(internship => ({
         ...internship,
         [columnName]: ''
       }));
       setAllInternships(updatedInternships);
       
-      // Update filtered list too
       const updatedFiltered = filteredInternships.map(internship => ({
         ...internship,
         [columnName]: ''
@@ -185,11 +173,10 @@ const InternshipPortal = () => {
       <main className="page-container">
         <motion.div
           className="w-full max-w-7xl mx-auto"
-          variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <motion.div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Internship Portal</h1>
               <p className="text-gray-500 text-sm">
@@ -229,7 +216,7 @@ const InternshipPortal = () => {
           </motion.div>
           
           {showDemoAlert && (
-            <motion.div variants={itemVariants} className="mb-6">
+            <motion.div className="mb-6">
               <Alert className="bg-blue-50 border-blue-200">
                 <InfoIcon className="h-4 w-4 text-blue-500" />
                 <AlertTitle>Demo Mode Active</AlertTitle>
@@ -244,11 +231,11 @@ const InternshipPortal = () => {
             </motion.div>
           )}
           
-          <motion.div variants={itemVariants} className="mb-8">
+          <motion.div className="mb-8">
             <InternshipFilterSection onFilterChange={handleFilterChange} />
           </motion.div>
           
-          <motion.div variants={itemVariants} className="mb-8">
+          <motion.div className="mb-8">
             <FileUpload 
               onUploadComplete={handleDriveConnect} 
               portalType="internship"
@@ -256,7 +243,7 @@ const InternshipPortal = () => {
             />
           </motion.div>
           
-          <motion.div variants={itemVariants}>
+          <motion.div>
             <div className="overflow-hidden border border-gray-200 rounded-lg bg-white">
               <div className="w-full overflow-x-auto">
                 <InternshipTable

@@ -46,3 +46,14 @@ export interface Filter {
   course: string;
   facultyCoordinator?: string;
 }
+
+// Add extended interfaces for table components
+export interface ProjectEntry extends ProjectData {
+  isEditing?: boolean;
+  isNew?: boolean;
+}
+
+export interface InternshipEntry extends InternshipData {
+  isEditing?: boolean;
+  isNew?: boolean;
+}

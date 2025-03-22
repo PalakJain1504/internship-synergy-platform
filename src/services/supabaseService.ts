@@ -1,5 +1,6 @@
+
 import { createClient } from '@supabase/supabase-js';
-import { ProjectData, Filter, InternshipData } from '@/lib/types';
+import { ProjectData, Filter, InternshipData, ProjectEntry, InternshipEntry } from '@/lib/types';
 
 // Initialize Supabase client
 // IMPORTANT: Replace these with your actual Supabase credentials
@@ -38,10 +39,10 @@ export async function fetchProjects(filters?: Filter) {
     throw error;
   }
   
-  return data as ProjectData[];
+  return data as ProjectEntry[];
 }
 
-export async function uploadProject(project: ProjectData) {
+export async function uploadProject(project: ProjectEntry) {
   const { error } = await supabase
     .from('projects')
     .insert(project);
@@ -52,7 +53,7 @@ export async function uploadProject(project: ProjectData) {
   }
 }
 
-export async function uploadMultipleProjects(projects: ProjectData[]) {
+export async function uploadMultipleProjects(projects: ProjectEntry[]) {
   const { error } = await supabase
     .from('projects')
     .insert(projects);
@@ -63,7 +64,7 @@ export async function uploadMultipleProjects(projects: ProjectData[]) {
   }
 }
 
-export async function updateProject(id: string, updates: Partial<ProjectData>) {
+export async function updateProject(id: string, updates: Partial<ProjectEntry>) {
   const { error } = await supabase
     .from('projects')
     .update(updates)
@@ -101,10 +102,10 @@ export async function fetchInternships(filters?: Filter) {
     throw error;
   }
   
-  return data as InternshipData[];
+  return data as InternshipEntry[];
 }
 
-export async function uploadInternship(internship: InternshipData) {
+export async function uploadInternship(internship: InternshipEntry) {
   const { error } = await supabase
     .from('internships')
     .insert(internship);
@@ -115,7 +116,7 @@ export async function uploadInternship(internship: InternshipData) {
   }
 }
 
-export async function uploadMultipleInternships(internships: InternshipData[]) {
+export async function uploadMultipleInternships(internships: InternshipEntry[]) {
   const { error } = await supabase
     .from('internships')
     .insert(internships);
@@ -126,7 +127,7 @@ export async function uploadMultipleInternships(internships: InternshipData[]) {
   }
 }
 
-export async function updateInternship(id: string, updates: Partial<InternshipData>) {
+export async function updateInternship(id: string, updates: Partial<InternshipEntry>) {
   const { error } = await supabase
     .from('internships')
     .update(updates)

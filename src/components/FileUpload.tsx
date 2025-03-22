@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Upload, Link2, FolderOpen, FileText, Loader2, FileUp, ExternalLink, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -129,7 +128,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, portalType, o
 
   const finalizeUpload = async (columnType: ColumnType) => {
     try {
-      let columnName = columnType;
+      let columnName: string;
       
       // Handle custom column name for attendance
       if (columnType === 'attendance') {
@@ -137,6 +136,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, portalType, o
         columnName = `Attendance ${month}`;
       } else if (columnType === 'custom' && customColumnName) {
         columnName = customColumnName;
+      } else {
+        columnName = columnType;
       }
       
       // In a real app, this would upload to Supabase storage
