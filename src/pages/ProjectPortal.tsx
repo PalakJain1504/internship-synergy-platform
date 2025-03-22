@@ -39,7 +39,7 @@ const ProjectPortal = () => {
     }
 
     // Generate sample data
-    const sampleData = generateSampleProjects(30).map(p => ({ ...p } as ProjectEntry));
+    const sampleData = generateSampleProjects(70).map(p => ({ ...p } as ProjectEntry));
     setAllProjects(sampleData);
     setFilteredProjects(sampleData);
     
@@ -201,31 +201,35 @@ const ProjectPortal = () => {
                 <InfoIcon className="h-4 w-4 text-blue-500" />
                 <AlertTitle>Demo Mode Active</AlertTitle>
                 <AlertDescription className="text-sm">
-                  <p>Currently showing demo data. This application is running in frontend-only mode with data stored in memory.</p>
-                  <p className="mt-1"><strong>Database:</strong> None (in-memory state storage only)</p>
-                  <p><strong>Platform:</strong> Frontend-only React application</p>
-                  <p><strong>ORM:</strong> None (simulated data storage)</p>
-                  <p className="mt-2 text-blue-600">To implement with a real database, you would need to add a backend service with MongoDB, MySQL, or a similar database.</p>
+                  <p>Currently showing demo data. This application is connected to Supabase for backend functionality.</p>
+                  <p className="mt-1"><strong>Database:</strong> PostgreSQL (via Supabase)</p>
+                  <p><strong>Platform:</strong> React application with Supabase backend</p>
+                  <p><strong>ORM:</strong> Supabase client library (direct database access)</p>
+                  <p className="mt-2 text-blue-600">Data is currently stored in-memory. In production, all data would be persisted in Supabase.</p>
                 </AlertDescription>
               </Alert>
             </motion.div>
           )}
           
-          <motion.div variants={itemVariants} className="mb-6">
+          <motion.div variants={itemVariants} className="mb-8">
             <FilterSection onFilterChange={handleFilterChange} />
           </motion.div>
           
-          <motion.div variants={itemVariants} className="mb-6">
+          <motion.div variants={itemVariants} className="mb-8">
             <FileUpload onUploadComplete={handleDriveConnect} />
           </motion.div>
           
           <motion.div variants={itemVariants}>
-            <Table
-              data={filteredProjects}
-              onDataChange={handleDataChange}
-              pageSize={pageSize}
-              onPageSizeChange={setPageSize}
-            />
+            <div className="overflow-hidden border border-gray-200 rounded-lg bg-white">
+              <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
+                <Table
+                  data={filteredProjects}
+                  onDataChange={handleDataChange}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
+            </div>
           </motion.div>
         </motion.div>
       </main>

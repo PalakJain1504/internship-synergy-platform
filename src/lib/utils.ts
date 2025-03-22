@@ -259,7 +259,9 @@ export function exportTableToPDF(
   });
 
   // Add date and page numbers
-  const totalPages = doc.internal.getNumberOfPages();
+  // Fix the getNumberOfPages method issue
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(8);

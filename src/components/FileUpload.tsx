@@ -31,6 +31,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [driveFolders, setDriveFolders] = useState<{name: string, files: DriveFile[]}[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadType, setUploadType] = useState<'form' | 'presentation' | 'report'>('form');
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
   const handleDriveLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDriveLink(e.target.value);
@@ -51,22 +54,22 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
         {
           name: "BTech CSE",
           files: [
-            { id: "file1", name: "G1_R101_ProjectProposal.pdf", type: "form", groupNo: "G1", rollNo: "R101" },
-            { id: "file2", name: "G1_R101_FinalPresentation.pptx", type: "presentation", groupNo: "G1", rollNo: "R101" },
-            { id: "file3", name: "G2_ProjectReport.pdf", type: "report", groupNo: "G2" },
+            { id: "file1", name: "G1_R101_ProjectProposal.pdf", type: 'form' as const, groupNo: "G1", rollNo: "R101" },
+            { id: "file2", name: "G1_R101_FinalPresentation.pptx", type: 'presentation' as const, groupNo: "G1", rollNo: "R101" },
+            { id: "file3", name: "G2_ProjectReport.pdf", type: 'report' as const, groupNo: "G2" },
           ]
         },
         {
           name: "BCA",
           files: [
-            { id: "file4", name: "G3_R103_ProjectReport.pdf", type: "report", groupNo: "G3", rollNo: "R103" },
-            { id: "file5", name: "G4_ProjectProposal.pdf", type: "form", groupNo: "G4" }
+            { id: "file4", name: "G3_R103_ProjectReport.pdf", type: 'report' as const, groupNo: "G3", rollNo: "R103" },
+            { id: "file5", name: "G4_ProjectProposal.pdf", type: 'form' as const, groupNo: "G4" }
           ]
         },
         {
           name: "BTech AI/ML",
           files: [
-            { id: "file6", name: "G5_R105_FinalPresentation.pptx", type: "presentation", groupNo: "G5", rollNo: "R105" }
+            { id: "file6", name: "G5_R105_FinalPresentation.pptx", type: 'presentation' as const, groupNo: "G5", rollNo: "R105" }
           ]
         }
       ];
@@ -79,13 +82,36 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
     }, 1500);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+      toast.success(`Selected file: ${e.target.files[0].name}`);
+    }
+  };
+
+  const handleFileUpload = () => {
+    if (!selectedFile) {
+      toast.error('Please select a file first');
+      return;
+    }
+    
+    if (!selectedGroup) {
+      toast.error('Please select a group to link this file to');
+      return;
+    }
+    
+    // In a real app, this would upload to the server or Supabase storage
+    toast.success(`Uploaded ${selectedFile.name} as ${uploadType} for group ${selectedGroup}`);
+    setSelectedFile(null);
+  };
+
   const linkFileToProject = (file: DriveFile) => {
     toast.success(`Linked ${file.name} to group ${file.groupNo}`);
   };
 
   return (
     <div className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm mb-6">
-      <h3 className="text-sm font-medium text-gray-700 mb-3">Google Drive Integration</h3>
+      <h3 className="text-sm font-medium text-gray-700 mb-3">Document Management</h3>
       
       {!isConnected ? (
         <div className="flex flex-col space-y-4">
@@ -152,8 +178,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
           
           <Tabs defaultValue="browse">
             <TabsList className="w-full">
-              <TabsTrigger value="browse" className="flex-1">Browse Files</TabsTrigger>
-              <TabsTrigger value="upload" className="flex-1">Upload New Files</TabsTrigger>
+              <TabsTrigger value="browse" className="flex-1">Browse Drive Files</TabsTrigger>
+              <TabsTrigger value="upload" className="flex-1">Upload Local Files</TabsTrigger>
             </TabsList>
             
             <TabsContent value="browse" className="space-y-4 pt-4">
@@ -232,22 +258,85 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete }) => {
             </TabsContent>
             
             <TabsContent value="upload" className="space-y-4 pt-4">
-              <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
-                <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                <p className="text-sm text-gray-600 mb-2">
-                  Drag and drop files here or click to browse
-                </p>
-                <p className="text-xs text-gray-500 mb-4">
-                  Files will be uploaded to your connected Google Drive folder
-                </p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="uploadType" className="block mb-1.5">Document Type</Label>
+                    <select 
+                      id="uploadType"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      value={uploadType}
+                      onChange={(e) => setUploadType(e.target.value as 'form' | 'presentation' | 'report')}
+                    >
+                      <option value="form">Form</option>
+                      <option value="presentation">Presentation</option>
+                      <option value="report">Report</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="groupSelect" className="block mb-1.5">Group No.</Label>
+                    <select
+                      id="groupSelect"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      value={selectedGroup || ''}
+                      onChange={(e) => setSelectedGroup(e.target.value)}
+                    >
+                      <option value="">Select Group</option>
+                      <option value="G1">G1</option>
+                      <option value="G2">G2</option>
+                      <option value="G3">G3</option>
+                      <option value="G4">G4</option>
+                      <option value="G5">G5</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="fileUpload" className="block mb-1.5">File</Label>
+                    <Input
+                      id="fileUpload"
+                      type="file"
+                      onChange={handleFileChange}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                </div>
                 
-                <Button
-                  variant="outline"
-                  className="bg-brand-blue/10 text-brand-blue border-0"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Select Files
-                </Button>
+                {selectedFile && (
+                  <div className="flex items-center justify-between p-3 border rounded-md bg-gray-50">
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 text-gray-500 mr-2" />
+                      <div>
+                        <p className="text-sm font-medium">{selectedFile.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {(selectedFile.size / 1024).toFixed(2)} KB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={handleFileUpload}
+                      disabled={!selectedGroup}
+                    >
+                      Upload & Link
+                    </Button>
+                  </div>
+                )}
+
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 mb-2">
+                    Or drop files here
+                  </p>
+                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-6">
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">
+                      Drag and drop files here
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Supported formats: PDF, DOCX, PPTX
+                    </p>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
