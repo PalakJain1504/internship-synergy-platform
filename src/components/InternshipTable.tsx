@@ -21,9 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { InternshipData, InternshipEntry } from '@/lib/types';
+import { InternshipEntry } from '@/lib/types';
 
 interface InternshipTableProps {
   data: InternshipEntry[];
@@ -81,8 +80,14 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       return;
     }
     
+    const updatedEntry: InternshipEntry = { 
+      ...editedData,
+      isEditing: false,
+      isNew: false
+    };
+    
     const newData = data.map((row) =>
-      row.id === editingRow ? { ...editedData, isEditing: false, isNew: false } : row
+      row.id === editingRow ? updatedEntry : row
     );
     
     onDataChange(newData);
@@ -129,8 +134,8 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       year: '',
       semester: '',
       course: '',
-      isEditing: false,
-      isNew: false,
+      isEditing: true,
+      isNew: true
     };
     
     // Add dynamic columns with empty values
@@ -138,15 +143,9 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       newRow[col] = '';
     });
     
-    const completedRow: InternshipEntry = {
-      ...newRow,
-      isEditing: true,
-      isNew: true
-    };
-    
-    onDataChange([...data, completedRow]);
+    onDataChange([...data, newRow]);
     setEditingRow(newId);
-    setEditedData(completedRow);
+    setEditedData(newRow);
     
     // Auto-scroll to the bottom of the table
     setTimeout(() => {

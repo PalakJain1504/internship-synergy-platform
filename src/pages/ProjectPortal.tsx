@@ -9,11 +9,10 @@ import FileUpload from '@/components/FileUpload';
 import UploadModal from '@/components/UploadModal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Download, Upload, FileUp, DatabaseIcon, InfoIcon } from 'lucide-react';
+import { Download, Upload, FileUp, DatabaseIcon } from 'lucide-react';
 import { generateSampleProjects, filterProjects, exportTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Filter } from '@/lib/types';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const ProjectPortal = () => {
   const navigate = useNavigate();
@@ -30,7 +29,6 @@ const ProjectPortal = () => {
   });
   const [pageSize, setPageSize] = useState(50);
   const [driveConnected, setDriveConnected] = useState(false);
-  const [showDemoAlert, setShowDemoAlert] = useState(true);
 
   useEffect(() => {
     // If not authenticated, redirect to login
@@ -75,12 +73,8 @@ const ProjectPortal = () => {
   };
 
   const handleUpload = (entries: ProjectEntry[], metadata: Filter) => {
-    // Clear demo data if requested
-    const updatedProjects = showDemoAlert ? [...allProjects, ...entries] : entries;
-    
-    if (!showDemoAlert) {
-      toast.success('Demo data cleared. Only uploaded data will be shown.');
-    }
+    // Add new entries to existing data
+    const updatedProjects = [...allProjects, ...entries];
     
     setAllProjects(updatedProjects);
     setCurrentFilters(metadata);
@@ -88,8 +82,6 @@ const ProjectPortal = () => {
     // Apply current filters to updated data
     const filtered = filterProjects(updatedProjects, metadata);
     setFilteredProjects(filtered);
-    
-    setShowDemoAlert(false);
   };
 
   const handleExportPDF = () => {
@@ -105,13 +97,6 @@ const ProjectPortal = () => {
     console.log('Connected to Google Drive:', driveLink);
     setDriveConnected(true);
     toast.success('Successfully connected to Google Drive');
-  };
-
-  const clearDemoData = () => {
-    setAllProjects([]);
-    setFilteredProjects([]);
-    setShowDemoAlert(false);
-    toast.success('Demo data cleared. System ready for fresh data upload.');
   };
 
   const handleAddColumn = (columnName: string) => {
@@ -186,34 +171,8 @@ const ProjectPortal = () => {
                 <FileUp className="h-4 w-4 mr-2" />
                 Upload Excel
               </Button>
-              
-              {showDemoAlert && (
-                <Button
-                  variant="outline"
-                  onClick={clearDemoData}
-                  className="bg-white text-red-600 border-red-200"
-                >
-                  Clear Demo Data
-                </Button>
-              )}
             </div>
           </motion.div>
-          
-          {showDemoAlert && (
-            <motion.div variants={itemVariants} className="mb-6">
-              <Alert className="bg-blue-50 border-blue-200">
-                <InfoIcon className="h-4 w-4 text-blue-500" />
-                <AlertTitle>Demo Mode Active</AlertTitle>
-                <AlertDescription className="text-sm">
-                  <p>Currently showing demo data. This application is connected to Supabase for backend functionality.</p>
-                  <p className="mt-1"><strong>Database:</strong> PostgreSQL (via Supabase)</p>
-                  <p><strong>Platform:</strong> React application with Supabase backend</p>
-                  <p><strong>ORM:</strong> Supabase client library (direct database access)</p>
-                  <p className="mt-2 text-blue-600">Data is currently stored in-memory. In production, all data would be persisted in Supabase.</p>
-                </AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
           
           <motion.div variants={itemVariants} className="mb-8">
             <FilterSection onFilterChange={handleFilterChange} />

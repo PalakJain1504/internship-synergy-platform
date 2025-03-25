@@ -3,12 +3,40 @@ import { createClient } from '@supabase/supabase-js';
 import { ProjectData, Filter, InternshipData, ProjectEntry, InternshipEntry } from '@/lib/types';
 
 // Initialize Supabase client
-// IMPORTANT: Replace these with your actual Supabase credentials
 const supabaseUrl = 'https://your-supabase-project.supabase.co';
 const supabaseKey = 'your-supabase-anon-key';
 
 // Create a client with your Supabase credentials
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Helper function to normalize course names
+const normalizeCourse = (course: string): string => {
+  // Convert to lowercase and remove dots and spaces
+  const normalized = course.toLowerCase().replace(/\s|\./g, '');
+  
+  // Map common variations
+  const mappings: Record<string, string> = {
+    'btech': 'btech',
+    'btechcse': 'btechcse',
+    'btechai': 'btechai/ml',
+    'btechaiml': 'btechai/ml',
+    'btechaids': 'btechai/ds',
+    'bsc': 'bsc',
+    'bca': 'bca',
+    'bcaai': 'bcaai/ds',
+    'bcaaids': 'bcaai/ds',
+    'mca': 'mca'
+  };
+  
+  // Find the best match
+  for (const [key, value] of Object.entries(mappings)) {
+    if (normalized.includes(key)) {
+      return value;
+    }
+  }
+  
+  return normalized;
+};
 
 // Project data functions
 export async function fetchProjects(filters?: Filter) {
@@ -139,8 +167,14 @@ export async function updateInternship(id: string, updates: Partial<InternshipEn
   }
 }
 
-// File storage functions
-export async function uploadFile(file: File, path: string) {
+// File storage functions - modified to handle nested paths based on course and group
+export async function uploadFile(file: File, portalType: string, fieldType: string, courseFolder: string, groupFolder: string) {
+  // Normalize the course name to handle variations
+  const normalizedCourse = normalizeCourse(courseFolder);
+  
+  // Create a path structure: portalType/fieldType/courseFolder/groupFolder/filename
+  const path = `${portalType}/${fieldType}/${normalizedCourse}/${groupFolder}/${file.name}`;
+  
   const { data, error } = await supabase
     .storage
     .from('project-files')
@@ -148,6 +182,26 @@ export async function uploadFile(file: File, path: string) {
   
   if (error) {
     console.error('Error uploading file:', error);
+    throw error;
+  }
+  
+  return data;
+}
+
+export async function getFilesInFolder(portalType: string, fieldType: string, courseFolder: string, groupFolder: string) {
+  // Normalize the course name to handle variations
+  const normalizedCourse = normalizeCourse(courseFolder);
+  
+  // Create a path structure: portalType/fieldType/courseFolder/groupFolder/
+  const path = `${portalType}/${fieldType}/${normalizedCourse}/${groupFolder}/`;
+  
+  const { data, error } = await supabase
+    .storage
+    .from('project-files')
+    .list(path);
+  
+  if (error) {
+    console.error('Error listing files:', error);
     throw error;
   }
   

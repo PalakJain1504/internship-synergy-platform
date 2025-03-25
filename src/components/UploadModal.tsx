@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,14 +11,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Filter } from '@/lib/types';
-import { ProjectEntry } from './Table';
+import { Filter, ProjectEntry, InternshipEntry } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (entries: ProjectEntry[], metadata: Filter) => void;
+  onUpload: (entries: ProjectEntry[] | InternshipEntry[], metadata: Filter) => void;
 }
 
 const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) => {
@@ -40,7 +38,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Check if file is an Excel file
       const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
       if (fileExtension !== 'xlsx' && fileExtension !== 'xls') {
         toast.error('Please upload only Excel files (.xlsx or .xls)');
@@ -49,10 +46,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       }
       setFile(selectedFile);
       
-      // Simulate reading Excel file and show preview
       setTimeout(() => {
-        // This is just a simulation of Excel file reading
-        // In a real app, you'd use a library like xlsx to parse the file
         const mockHeaders = ['groupNo', 'rollNo', 'name', 'email', 'phoneNo', 'title', 'domain', 'facultyMentor', 'industryMentor'];
         const mockRows = [
           ['G1', 'R101', 'John Doe', 'john@example.com', '9876543210', 'AI Project', 'Machine Learning', 'Dr. Sharma', 'Mr. Patel'],
@@ -60,7 +54,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           ['G2', 'R103', 'Alex Kim', 'alex@example.com', '9876543212', 'Web App', 'Web Development', 'Dr. Singh', 'Ms. Gupta'],
         ];
         
-        // Check if required fields are present
         const requiredFields = ['groupNo', 'rollNo', 'name'];
         const hasAllRequired = requiredFields.every(field => mockHeaders.includes(field));
         
@@ -78,7 +71,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
   };
 
   const handleUpload = () => {
-    // Validation
     if (!file) {
       toast.error('Please select a file to upload');
       return;
@@ -96,11 +88,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
 
     setIsUploading(true);
 
-    // Process the Excel data (simulated)
     setTimeout(() => {
-      // Create entries from the preview data
-      const entries: ProjectEntry[] = previewData?.rows.map((row, index) => {
-        const entry: ProjectEntry = {
+      const entries = previewData?.rows.map((row, index) => {
+        const entry = {
           id: `upload-${Date.now()}-${index}`,
           groupNo: row[0] || '',
           rollNo: row[1] || '',
@@ -114,12 +104,15 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           form: '',
           presentation: '',
           report: '',
-          ...metadata,
+          year: metadata.year,
+          semester: metadata.semester,
+          course: metadata.course,
+          facultyCoordinator: metadata.facultyCoordinator || '',
         };
         return entry;
       }) || [];
 
-      onUpload(entries, metadata);
+      onUpload(entries as ProjectEntry[], metadata);
       setIsUploading(false);
       setFile(null);
       setPreviewData(null);

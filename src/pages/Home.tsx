@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Folder, FileText, ChevronRight, GraduationCap, Users, Briefcase } from "lucide-react";
+import { Folder, FileText, ChevronRight, Briefcase } from "lucide-react";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ const Home = () => {
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -91,36 +91,6 @@ const Home = () => {
                   </CardContent>
                 </Card>
               </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <Card className="h-full">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center text-purple-600">
-                      <GraduationCap className="h-5 w-5 mr-2" />
-                      <span>Academic Portal</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Track academic progress and requirements
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Monitor course completions, credit requirements, and academic milestones. Generate progress reports.
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      className="text-purple-600 border-purple-200 hover:bg-purple-50 w-full"
-                      disabled
-                    >
-                      Coming Soon
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
             </div>
           </section>
 
@@ -160,13 +130,6 @@ const Home = () => {
                       <div>
                         <p className="text-sm font-medium">Internship Portal Released</p>
                         <p className="text-xs text-gray-500">New portal for managing student internships</p>
-                      </div>
-                    </li>
-                    <li className="p-3 bg-gray-50 rounded-md flex items-start">
-                      <Users className="h-5 w-5 text-purple-600 mr-3 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">User Management Updates</p>
-                        <p className="text-xs text-gray-500">Improved role-based access controls</p>
                       </div>
                     </li>
                   </ul>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -8,11 +9,10 @@ import FileUpload from '@/components/FileUpload';
 import UploadModal from '@/components/UploadModal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Download, Upload, FileUp, InfoIcon } from 'lucide-react';
+import { Download, FileUp } from 'lucide-react';
 import { generateSampleInternships, filterInternships, exportInternshipTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Filter, InternshipEntry } from '@/lib/types';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const InternshipPortal = () => {
   const navigate = useNavigate();
@@ -28,7 +28,6 @@ const InternshipPortal = () => {
   });
   const [pageSize, setPageSize] = useState(50);
   const [driveConnected, setDriveConnected] = useState(false);
-  const [showDemoAlert, setShowDemoAlert] = useState(true);
   const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
 
   useEffect(() => {
@@ -79,19 +78,13 @@ const InternshipPortal = () => {
   };
 
   const handleUpload = (entries: InternshipEntry[], metadata: Filter) => {
-    const updatedInternships = showDemoAlert ? [...allInternships, ...entries] : entries;
-    
-    if (!showDemoAlert) {
-      toast.success('Demo data cleared. Only uploaded data will be shown.');
-    }
+    const updatedInternships = [...allInternships, ...entries];
     
     setAllInternships(updatedInternships);
     setCurrentFilters(metadata);
     
     const filtered = filterInternships(updatedInternships, metadata);
     setFilteredInternships(filtered);
-    
-    setShowDemoAlert(false);
   };
 
   const handleExportPDF = () => {
@@ -107,13 +100,6 @@ const InternshipPortal = () => {
     console.log('Connected to Google Drive:', driveLink);
     setDriveConnected(true);
     toast.success('Successfully connected to Google Drive');
-  };
-
-  const clearDemoData = () => {
-    setAllInternships([]);
-    setFilteredInternships([]);
-    setShowDemoAlert(false);
-    toast.success('Demo data cleared. System ready for fresh data upload.');
   };
 
   const handleAddColumn = (columnName: string) => {
@@ -202,34 +188,8 @@ const InternshipPortal = () => {
                 <FileUp className="h-4 w-4 mr-2" />
                 Upload Excel
               </Button>
-              
-              {showDemoAlert && (
-                <Button
-                  variant="outline"
-                  onClick={clearDemoData}
-                  className="bg-white text-red-600 border-red-200"
-                >
-                  Clear Demo Data
-                </Button>
-              )}
             </div>
           </motion.div>
-          
-          {showDemoAlert && (
-            <motion.div className="mb-6">
-              <Alert className="bg-blue-50 border-blue-200">
-                <InfoIcon className="h-4 w-4 text-blue-500" />
-                <AlertTitle>Demo Mode Active</AlertTitle>
-                <AlertDescription className="text-sm">
-                  <p>Currently showing demo data. This application is connected to Supabase for backend functionality.</p>
-                  <p className="mt-1"><strong>Database:</strong> PostgreSQL (via Supabase)</p>
-                  <p><strong>Platform:</strong> React application with Supabase backend</p>
-                  <p><strong>ORM:</strong> Supabase client library (direct database access)</p>
-                  <p className="mt-2 text-blue-600">Data is currently stored in-memory. In production, all data would be persisted in Supabase.</p>
-                </AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
           
           <motion.div className="mb-8">
             <InternshipFilterSection onFilterChange={handleFilterChange} />
@@ -262,7 +222,7 @@ const InternshipPortal = () => {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleUpload}
+        onUpload={handleUpload as (entries: any[], metadata: Filter) => void}
       />
     </div>
   );
