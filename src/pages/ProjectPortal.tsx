@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import FilterSection from '@/components/FilterSection';
-import Table, { ProjectEntry } from '@/components/Table';
+import Table from '@/components/Table';
 import FileUpload from '@/components/FileUpload';
 import UploadModal from '@/components/UploadModal';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import { toast } from 'sonner';
 import { Download, Upload, FileUp, DatabaseIcon } from 'lucide-react';
 import { generateSampleProjects, filterProjects, exportTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Filter } from '@/lib/types';
+import { Filter, ProjectEntry } from '@/lib/types';
 
 const ProjectPortal = () => {
   const navigate = useNavigate();
@@ -31,24 +30,20 @@ const ProjectPortal = () => {
   const [driveConnected, setDriveConnected] = useState(false);
 
   useEffect(() => {
-    // If not authenticated, redirect to login
     if (!isAuthenticated) {
       navigate('/login');
     }
 
-    // Generate sample data
     const sampleData = generateSampleProjects(70).map(p => ({ ...p } as ProjectEntry));
     setAllProjects(sampleData);
     setFilteredProjects(sampleData);
     
-    // Simulate loading
     setTimeout(() => setIsLoaded(true), 500);
   }, [isAuthenticated, navigate]);
 
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    // Apply filters to projects
     const filtered = filterProjects(allProjects, filters);
     setFilteredProjects(filtered);
   };
@@ -56,13 +51,11 @@ const ProjectPortal = () => {
   const handleDataChange = (newData: ProjectEntry[]) => {
     setFilteredProjects(newData);
     
-    // Update the all projects list with the changes
     const updatedAllProjects = allProjects.map(project => {
       const updatedProject = newData.find(p => p.id === project.id);
       return updatedProject || project;
     });
     
-    // Add any new projects that weren't in the original list
     newData.forEach(project => {
       if (!updatedAllProjects.some(p => p.id === project.id)) {
         updatedAllProjects.push(project);
@@ -73,13 +66,11 @@ const ProjectPortal = () => {
   };
 
   const handleUpload = (entries: ProjectEntry[], metadata: Filter) => {
-    // Add new entries to existing data
     const updatedProjects = [...allProjects, ...entries];
     
     setAllProjects(updatedProjects);
     setCurrentFilters(metadata);
     
-    // Apply current filters to updated data
     const filtered = filterProjects(updatedProjects, metadata);
     setFilteredProjects(filtered);
   };
@@ -204,7 +195,7 @@ const ProjectPortal = () => {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleUpload}
+        onUpload={(entries, metadata) => handleUpload(entries as ProjectEntry[], metadata)}
       />
     </div>
   );
