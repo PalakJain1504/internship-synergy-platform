@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Upload, Link2, FolderOpen, FileText, Loader2, FileUp, ExternalLink, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,15 @@ interface DriveFile {
 type ColumnType = 'form' | 'presentation' | 'report' | 'noc' | 'offerLetter' | 'pop' | 'attendance' | 'custom';
 
 const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, portalType, onAddColumn }) => {
-  const [driveLink, setDriveLink] = useState('');
+  const [driveLinks, setDriveLinks] = useState<{[key: string]: string}>({
+    main: '',
+    form: '',
+    presentation: '',
+    report: '',
+    noc: '',
+    offerLetter: '',
+    pop: ''
+  });
   const [isUploading, setIsUploading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
@@ -50,56 +59,61 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, portalType, o
   const [isColumnSelectOpen, setIsColumnSelectOpen] = useState(false);
   const [customColumnName, setCustomColumnName] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [activeColumnType, setActiveColumnType] = useState<string>('');
 
-  const handleDriveLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDriveLink(e.target.value);
+  const handleDriveLinkChange = (type: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    setDriveLinks(prev => ({
+      ...prev,
+      [type]: e.target.value
+    }));
   };
 
   const validateDriveLink = (link: string) => {
     return link && link.includes('drive.google.com');
   };
 
-  const handleDriveLinkSubmit = () => {
-    if (!validateDriveLink(driveLink)) {
+  const handleDriveLinkSubmit = (type: string) => {
+    const link = driveLinks[type];
+    if (!validateDriveLink(link)) {
       toast.error('Please enter a valid Google Drive link');
       return;
     }
 
     setIsUploading(true);
+    setActiveColumnType(type);
     
-    // Open column selection dialog
-    setIsColumnSelectOpen(true);
-    
-    // Simulate processing the drive link
+    // Open column selection dialog if it's the main drive link
+    if (type === 'main') {
+      setIsColumnSelectOpen(true);
+    } else {
+      // For specific column drive links
+      simulateProcessing(type);
+    }
+  };
+  
+  const simulateProcessing = (type: string) => {
+    // Simulate processing the drive link for a specific column
     setTimeout(() => {
       // Simulate folders found in Drive
       const mockFolders = [
         {
           name: "BTech CSE",
           files: [
-            { id: "file1", name: "G1_R101_ProjectProposal.pdf", type: 'form', groupNo: "G1", rollNo: "R101" },
-            { id: "file2", name: "G1_R101_FinalPresentation.pptx", type: 'presentation', groupNo: "G1", rollNo: "R101" },
-            { id: "file3", name: "G2_ProjectReport.pdf", type: 'report', groupNo: "G2" },
+            { id: "file1", name: `G1_R101_${type === 'form' ? 'ProjectProposal' : type === 'presentation' ? 'FinalPresentation' : type === 'report' ? 'ProjectReport' : type === 'noc' ? 'NOC' : type === 'offerLetter' ? 'OfferLetter' : 'PoP'}.pdf`, type, groupNo: "G1", rollNo: "R101" },
+            { id: "file2", name: `G1_R102_${type === 'form' ? 'ProjectProposal' : type === 'presentation' ? 'FinalPresentation' : type === 'report' ? 'ProjectReport' : type === 'noc' ? 'NOC' : type === 'offerLetter' ? 'OfferLetter' : 'PoP'}.pdf`, type, groupNo: "G1", rollNo: "R102" },
           ]
         },
         {
           name: "BCA",
           files: [
-            { id: "file4", name: "G3_R103_ProjectReport.pdf", type: 'report', groupNo: "G3", rollNo: "R103" },
-            { id: "file5", name: "G4_ProjectProposal.pdf", type: 'form', groupNo: "G4" }
+            { id: "file3", name: `G2_R103_${type === 'form' ? 'ProjectProposal' : type === 'presentation' ? 'FinalPresentation' : type === 'report' ? 'ProjectReport' : type === 'noc' ? 'NOC' : type === 'offerLetter' ? 'OfferLetter' : 'PoP'}.pdf`, type, groupNo: "G2", rollNo: "R103" },
           ]
         },
-        {
-          name: "BTech AI/ML",
-          files: [
-            { id: "file6", name: "G5_R105_FinalPresentation.pptx", type: 'presentation', groupNo: "G5", rollNo: "R105" }
-          ]
-        }
       ];
       
       setDriveFolders(mockFolders);
       setIsConnected(true);
-      onUploadComplete(driveLink);
+      onUploadComplete(driveLinks[type]);
       setIsUploading(false);
     }, 1500);
   };
@@ -195,35 +209,53 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, portalType, o
     }
   };
 
+  // Get specific drive link sections based on portal type
+  const getDriveLinkSections = () => {
+    if (portalType === 'project') {
+      return [
+        { id: 'form', label: 'Form Documents' },
+        { id: 'presentation', label: 'Presentation Files' },
+        { id: 'report', label: 'Report Documents' }
+      ];
+    } else {
+      return [
+        { id: 'noc', label: 'NOC Documents' },
+        { id: 'offerLetter', label: 'Offer Letter Files' },
+        { id: 'pop', label: 'PoP Documents' }
+      ];
+    }
+  };
+
   return (
     <div className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm mb-6">
       <h3 className="text-sm font-medium text-gray-700 mb-3">Document Management</h3>
       
       {!isConnected ? (
         <div className="flex flex-col space-y-6">
-          <div className="space-y-6">
+          <div className="space-y-4">
+            {/* Main Drive Link */}
             <div className="space-y-1.5">
-              <Label htmlFor="mainDriveLink">Google Drive Folder Link</Label>
+              <Label htmlFor="customDriveLink">Custom Drive Link (For Additional Columns)</Label>
               <div className="flex space-x-2">
                 <div className="relative flex-grow">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <Link2 className="h-4 w-4 text-gray-400" />
                   </div>
                   <Input
-                    id="mainDriveLink"
+                    id="customDriveLink"
                     type="url"
                     placeholder="https://drive.google.com/drive/folders/..."
-                    value={driveLink}
-                    onChange={handleDriveLinkChange}
+                    value={driveLinks.main}
+                    onChange={(e) => handleDriveLinkChange('main', e)}
                     className="pl-10"
                   />
                 </div>
                 <Button
-                  onClick={handleDriveLinkSubmit}
-                  disabled={isUploading || !driveLink}
+                  onClick={() => handleDriveLinkSubmit('main')}
+                  disabled={isUploading || !driveLinks.main}
                   className="bg-brand-blue hover:bg-brand-darkBlue whitespace-nowrap"
                 >
-                  {isUploading ? (
+                  {isUploading && activeColumnType === 'main' ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Connecting...
@@ -237,8 +269,47 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, portalType, o
                 </Button>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Connect a Google Drive folder containing {portalType === 'project' ? 'project' : 'internship'} documents
+                Connect a Google Drive folder for custom columns and additional documents
               </p>
+            </div>
+
+            {/* Specific Drive Links */}
+            <div className="pt-4 border-t border-gray-100">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Document-Specific Drive Links</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {getDriveLinkSections().map(section => (
+                  <div key={section.id} className="space-y-1.5">
+                    <Label htmlFor={`${section.id}DriveLink`}>{section.label}</Label>
+                    <div className="flex space-x-2">
+                      <div className="relative flex-grow">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                          <FileText className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <Input
+                          id={`${section.id}DriveLink`}
+                          type="url"
+                          placeholder="https://drive.google.com/drive/folders/..."
+                          value={driveLinks[section.id]}
+                          onChange={(e) => handleDriveLinkChange(section.id, e)}
+                          className="pl-10"
+                        />
+                      </div>
+                      <Button
+                        onClick={() => handleDriveLinkSubmit(section.id)}
+                        disabled={isUploading || !driveLinks[section.id]}
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-700"
+                      >
+                        {isUploading && activeColumnType === section.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -257,7 +328,15 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadComplete, portalType, o
                 setIsConnected(false);
                 setDriveFolders([]);
                 setSelectedCourse(null);
-                setDriveLink('');
+                setDriveLinks({
+                  main: '',
+                  form: '',
+                  presentation: '',
+                  report: '',
+                  noc: '',
+                  offerLetter: '',
+                  pop: ''
+                });
               }}
             >
               Disconnect

@@ -168,13 +168,7 @@ export async function updateInternship(id: string, updates: Partial<InternshipEn
 }
 
 // File storage functions - modified to handle nested paths based on course and group
-export async function uploadFile(file: File, portalType: string, fieldType: string, courseFolder: string, groupFolder: string) {
-  // Normalize the course name to handle variations
-  const normalizedCourse = normalizeCourse(courseFolder);
-  
-  // Create a path structure: portalType/fieldType/courseFolder/groupFolder/filename
-  const path = `${portalType}/${fieldType}/${normalizedCourse}/${groupFolder}/${file.name}`;
-  
+export async function uploadFile(file: File, path: string) {
   const { data, error } = await supabase
     .storage
     .from('project-files')
