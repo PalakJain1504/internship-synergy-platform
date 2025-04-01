@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -11,7 +12,7 @@ import { toast } from 'sonner';
 import { Download, FileUp } from 'lucide-react';
 import { generateSampleInternships, filterInternships, exportInternshipTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Filter, InternshipEntry } from '@/lib/types';
+import { Filter, InternshipEntry, InternshipData } from '@/lib/types';
 
 const InternshipPortal = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const InternshipPortal = () => {
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    const filtered = filterInternships(allInternships, filters) as InternshipEntry[];
+    const filtered = filterInternships(allInternships as unknown as InternshipData[], filters) as unknown as InternshipEntry[];
     setFilteredInternships(filtered);
   };
 
@@ -82,13 +83,13 @@ const InternshipPortal = () => {
     setAllInternships(updatedInternships);
     setCurrentFilters(metadata);
     
-    const filtered = filterInternships(updatedInternships, metadata) as InternshipEntry[];
+    const filtered = filterInternships(updatedInternships as unknown as InternshipData[], metadata) as unknown as InternshipEntry[];
     setFilteredInternships(filtered);
   };
 
   const handleExportPDF = () => {
     exportInternshipTableToPDF(
-      filteredInternships,
+      filteredInternships as unknown as InternshipData[],
       currentFilters,
       'Internship Portal - Data Export'
     );

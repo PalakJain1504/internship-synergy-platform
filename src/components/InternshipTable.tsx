@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft,
@@ -162,7 +163,11 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     value: string
   ) => {
     if (!editedData) return;
-    setEditedData({ ...editedData, [field]: value });
+    // Type assertion is necessary here to handle the dynamic fields
+    setEditedData({ 
+      ...editedData, 
+      [field]: value 
+    });
   };
 
   // Trigger file input click
@@ -184,7 +189,11 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     const fieldName = activeFileField.field;
     const fileName = `${editedData.rollNo}_${fieldName}.${file.name.split('.').pop()}`;
     
-    setEditedData({ ...editedData, [fieldName]: fileName });
+    // Type assertion is necessary here because TypeScript doesn't know that fieldName is a key of editedData
+    setEditedData({ 
+      ...editedData, 
+      [fieldName]: fileName 
+    });
     toast.success(`File selected: ${fileName}`);
     
     // Reset file input

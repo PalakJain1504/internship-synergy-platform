@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     missingRequired: boolean;
   } | null>(null);
 
+  // Reset state when modal is closed
   useEffect(() => {
     if (!isOpen) {
       setFile(null);
@@ -44,6 +46,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     }
   }, [isOpen]);
 
+  // Parse Excel file and return headers and rows
   const parseExcelFile = async (excelFile: File) => {
     return new Promise<{headers: string[], rows: any[]}>((resolve, reject) => {
       const reader = new FileReader();
@@ -80,6 +83,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     });
   };
 
+  // Handle file selection and preview
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -95,10 +99,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       try {
         const { headers, rows } = await parseExcelFile(selectedFile);
         
-        // Check for required fields
-        const requiredFields = ['groupNo', 'rollNo', 'name'];
+        // Check for required fields - normalize headers to handle case differences and spaces
+        const normalizedHeaders = headers.map(h => h.toLowerCase().replace(/\s/g, ''));
+        const requiredFields = ['rollno', 'name']; // Minimal required fields for internship data
         const hasAllRequired = requiredFields.every(field => 
-          headers.map(h => h.toLowerCase().replace(/\s/g, '')).includes(field.toLowerCase())
+          normalizedHeaders.includes(field.toLowerCase())
         );
         
         // Format rows for preview
@@ -120,23 +125,59 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     }
   };
 
+  // Handle metadata changes
   const handleMetadataChange = (key: keyof Filter, value: string) => {
     setMetadata((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Map Excel column names to appropriate field names
+  const getNormalizedFieldName = (header: string): string => {
+    const normalized = header.toLowerCase().replace(/\s/g, '');
+    
+    // Map common variations of column names to standardized field names
+    const fieldMappings: Record<string, string> = {
+      'roll': 'rollNo',
+      'rollno': 'rollNo',
+      'rollnumber': 'rollNo',
+      'roll_no': 'rollNo',
+      'roll_number': 'rollNo',
+      'studentname': 'name',
+      'student': 'name',
+      'studentfullname': 'name',
+      'fullname': 'name',
+      'org': 'organization',
+      'company': 'organization',
+      'internshipcompany': 'organization',
+      'date': 'dates',
+      'internshipdates': 'dates',
+      'duration': 'dates',
+      'period': 'dates',
+      'noobjection': 'noc',
+      'nocobjectioncertificate': 'noc',
+      'offer': 'offerLetter',
+      'offerltr': 'offerLetter',
+      'proofofparticipation': 'pop',
+      'completion': 'pop',
+      'completioncertificate': 'pop'
+    };
+    
+    return fieldMappings[normalized] || normalized;
+  };
+
+  // Handle Excel upload
   const handleUpload = async () => {
     if (!file) {
       toast.error('Please select a file to upload');
       return;
     }
     
-    if (!metadata.year || !metadata.semester || !metadata.course || !metadata.facultyCoordinator) {
-      toast.error('Please fill in all metadata fields');
+    if (!metadata.year || !metadata.semester || !metadata.course) {
+      toast.error('Please fill in all required metadata fields (year, semester, course)');
       return;
     }
 
     if (previewData?.missingRequired) {
-      toast.error('The Excel file is missing required columns (groupNo, rollNo, name)');
+      toast.error('The Excel file is missing required columns (rollNo, name)');
       return;
     }
 
@@ -146,23 +187,29 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       // Get all the data rows from the Excel file
       const { headers, rows } = await parseExcelFile(file);
       
-      // Transform Excel data to ProjectEntry or InternshipEntry format
+      // Transform Excel data to InternshipEntry format with normalized field names
       const entries = rows.map((row, index) => {
         const entry: Record<string, string> = {
           id: `upload-${Date.now()}-${index}`,
           year: metadata.year,
           semester: metadata.semester,
           course: metadata.course,
-          facultyCoordinator: metadata.facultyCoordinator || '',
+          // Initialize default required fields
+          rollNo: '',
+          name: '',
+          program: '',
+          organization: '',
+          dates: '',
+          noc: '',
+          offerLetter: '',
+          pop: '',
         };
         
         // Map Excel columns to entry properties
         headers.forEach((header, colIndex) => {
-          const normalizedHeader = header.toLowerCase().replace(/\s/g, '');
+          const normalizedField = getNormalizedFieldName(header);
           if (row[colIndex] !== undefined && row[colIndex] !== null) {
-            entry[normalizedHeader] = String(row[colIndex]);
-          } else {
-            entry[normalizedHeader] = '';
+            entry[normalizedField] = String(row[colIndex]);
           }
         });
         
@@ -242,7 +289,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Missing Required Fields</AlertTitle>
                   <AlertDescription>
-                    Your Excel file must include the following required columns: 'groupNo', 'rollNo', and 'name'.
+                    Your Excel file must include at minimum the following columns: 'Roll No' and 'Name'.
+                    These can be in any case or format (e.g., "Roll No.", "roll_no", "Roll Number").
                   </AlertDescription>
                 </Alert>
               )}
@@ -251,19 +299,25 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      {previewData.headers.map((header, index) => (
-                        <th 
-                          key={index}
-                          className={`px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                            ['groupNo', 'rollNo', 'name'].includes(header.toLowerCase().replace(/\s/g, '')) ? 'bg-yellow-50' : ''
-                          }`}
-                        >
-                          {header}
-                          {['groupNo', 'rollNo', 'name'].includes(header.toLowerCase().replace(/\s/g, '')) && (
-                            <span className="text-red-500 ml-1">*</span>
-                          )}
-                        </th>
-                      ))}
+                      {previewData.headers.map((header, index) => {
+                        const normalizedHeader = header.toLowerCase().replace(/\s/g, '');
+                        const isRequired = ['rollno', 'name'].includes(normalizedHeader) || 
+                                         normalizedHeader.includes('roll') && normalizedHeader.includes('no');
+                        
+                        return (
+                          <th 
+                            key={index}
+                            className={`px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                              isRequired ? 'bg-yellow-50' : ''
+                            }`}
+                          >
+                            {header}
+                            {isRequired && (
+                              <span className="text-red-500 ml-1">*</span>
+                            )}
+                          </th>
+                        );
+                      })}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -287,13 +341,13 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
               <p className="text-xs text-gray-500">
                 Showing preview of first 5 rows from your Excel file.
                 Fields marked with <span className="text-red-500">*</span> are required.
-                Missing values for optional fields can be filled manually later.
+                The system will automatically map common column variations (e.g., "Roll No", "Roll Number", "Roll_No") to the correct fields.
               </p>
             </div>
           )}
 
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-700">Project Metadata</h3>
+            <h3 className="text-sm font-medium text-gray-700">Internship Metadata</h3>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
