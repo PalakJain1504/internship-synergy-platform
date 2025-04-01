@@ -12,14 +12,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Filter, ProjectEntry, InternshipEntry } from '@/lib/types';
+import { Filter, ProjectData, InternshipData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (entries: ProjectEntry[] | InternshipEntry[], metadata: Filter) => void;
+  onUpload: (entries: ProjectData[] | InternshipData[], metadata: Filter) => void;
 }
 
 const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) => {
@@ -99,12 +99,28 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       try {
         const { headers, rows } = await parseExcelFile(selectedFile);
         
-        // Check for required fields - normalize headers to handle case differences and spaces
+        // Check for required fields using a more flexible approach to match columns
+        const requiredPairs = [
+          [['roll', 'number'], ['rollno', 'rollnumber', 'roll', 'roll no', 'roll number']], 
+          [['student', 'name'], ['name', 'studentname', 'student name', 'full name']]
+        ];
+        
         const normalizedHeaders = headers.map(h => h.toLowerCase().replace(/\s/g, ''));
-        const requiredFields = ['rollno', 'name']; // Minimal required fields for internship data
-        const hasAllRequired = requiredFields.every(field => 
-          normalizedHeaders.includes(field.toLowerCase())
-        );
+        
+        // Check if at least one column matches each required field
+        let foundRequiredFields = true;
+        for (const [requiredConcepts, possibleMatches] of requiredPairs) {
+          // Check if any header contains all required concepts OR matches any possible match exactly
+          const hasMatch = normalizedHeaders.some(header => 
+            requiredConcepts.every(concept => header.includes(concept)) ||
+            possibleMatches.includes(header)
+          );
+          
+          if (!hasMatch) {
+            foundRequiredFields = false;
+            break;
+          }
+        }
         
         // Format rows for preview
         const formattedRows = rows.slice(0, 5).map(row => {
@@ -114,7 +130,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
         setPreviewData({
           headers: headers,
           rows: formattedRows,
-          missingRequired: !hasAllRequired
+          missingRequired: !foundRequiredFields
         });
       } catch (error) {
         console.error('Error parsing Excel file:', error);
@@ -130,12 +146,59 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     setMetadata((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Map Excel column names to appropriate field names
+  // Enhanced function to map Excel column headers to our field names with better pattern matching
   const getNormalizedFieldName = (header: string): string => {
     const normalized = header.toLowerCase().replace(/\s/g, '');
     
-    // Map common variations of column names to standardized field names
+    // Comprehensive field mapping with pattern matching
+    const fieldPatterns = [
+      // Roll number patterns
+      { pattern: /^s\.?no\.?$/i, field: 'id' },
+      { pattern: /^(roll|roll.?no|roll.?number|enrollment)$/i, field: 'rollNo' },
+      
+      // Name patterns
+      { pattern: /^(student.?name|name|full.?name)$/i, field: 'name' },
+      
+      // Program patterns
+      { pattern: /^(program|course|degree)$/i, field: 'program' },
+      
+      // Organization patterns
+      { pattern: /^(organization|company|org|name.*organization|internship.*organization)$/i, field: 'organization' },
+      
+      // Dates patterns
+      { pattern: /^(dates|duration|period|internship.?dates|internship.?period)$/i, field: 'dates' },
+      
+      // Document patterns
+      { pattern: /^(noc|no.?objection|certificate)$/i, field: 'noc' },
+      { pattern: /^(offer|offer.?letter|offer.?ltr)$/i, field: 'offerLetter' },
+      { pattern: /^(pop|proof|completion|certificate)$/i, field: 'pop' },
+      
+      // Attendance patterns - these will become dynamic columns
+      { pattern: /^attendance.*january$/i, field: 'Attendance January' },
+      { pattern: /^attendance.*february$/i, field: 'Attendance February' },
+      { pattern: /^attendance.*march$/i, field: 'Attendance March' },
+      { pattern: /^attendance.*april$/i, field: 'Attendance April' },
+      { pattern: /^attendance.*may$/i, field: 'Attendance May' },
+      { pattern: /^attendance.*june$/i, field: 'Attendance June' },
+      { pattern: /^attendance.*july$/i, field: 'Attendance July' },
+      { pattern: /^attendance.*august$/i, field: 'Attendance August' },
+      { pattern: /^attendance.*september$/i, field: 'Attendance September' },
+      { pattern: /^attendance.*october$/i, field: 'Attendance October' },
+      { pattern: /^attendance.*november$/i, field: 'Attendance November' },
+      { pattern: /^attendance.*december$/i, field: 'Attendance December' },
+    ];
+    
+    // Try to match based on patterns first
+    for (const { pattern, field } of fieldPatterns) {
+      if (pattern.test(normalized)) {
+        return field;
+      }
+    }
+    
+    // Specific mappings as fallback for exact matches
     const fieldMappings: Record<string, string> = {
+      'sno': 'id',
+      's.no': 'id',
       'roll': 'rollNo',
       'rollno': 'rollNo',
       'rollnumber': 'rollNo',
@@ -148,6 +211,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       'org': 'organization',
       'company': 'organization',
       'internshipcompany': 'organization',
+      'nameoftheorganizationfromwhereinternshipisdone': 'organization',
       'date': 'dates',
       'internshipdates': 'dates',
       'duration': 'dates',
@@ -158,13 +222,16 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       'offerltr': 'offerLetter',
       'proofofparticipation': 'pop',
       'completion': 'pop',
-      'completioncertificate': 'pop'
+      'completioncertificate': 'pop',
+      'attendancejanuary': 'Attendance January',
+      'attendancefebruary': 'Attendance February',
     };
     
-    return fieldMappings[normalized] || normalized;
+    // Try exact match from our mapping
+    return fieldMappings[normalized] || header; // If no match found, keep the original header
   };
 
-  // Handle Excel upload
+  // Handle Excel upload with improved column matching
   const handleUpload = async () => {
     if (!file) {
       toast.error('Please select a file to upload');
@@ -177,7 +244,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     }
 
     if (previewData?.missingRequired) {
-      toast.error('The Excel file is missing required columns (rollNo, name)');
+      toast.error('The Excel file is missing required columns (Roll No and Name)');
       return;
     }
 
@@ -187,14 +254,24 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       // Get all the data rows from the Excel file
       const { headers, rows } = await parseExcelFile(file);
       
-      // Transform Excel data to InternshipEntry format with normalized field names
-      const entries = rows.map((row, index) => {
+      // Create a mapping from Excel headers to our field names
+      const fieldMapping = new Map<number, string>();
+      
+      // Map each column index to our standardized field name
+      headers.forEach((header, index) => {
+        const normalizedFieldName = getNormalizedFieldName(header);
+        fieldMapping.set(index, normalizedFieldName);
+        console.log(`Mapped column "${header}" to field "${normalizedFieldName}"`);
+      });
+      
+      // Transform Excel data to entry format using the mapping
+      const entries = rows.map((row, rowIndex) => {
         const entry: Record<string, string> = {
-          id: `upload-${Date.now()}-${index}`,
+          id: `upload-${Date.now()}-${rowIndex}`,
           year: metadata.year,
           semester: metadata.semester,
           course: metadata.course,
-          // Initialize default required fields
+          // Initialize required fields with empty strings
           rollNo: '',
           name: '',
           program: '',
@@ -205,11 +282,12 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           pop: '',
         };
         
-        // Map Excel columns to entry properties
-        headers.forEach((header, colIndex) => {
-          const normalizedField = getNormalizedFieldName(header);
-          if (row[colIndex] !== undefined && row[colIndex] !== null) {
-            entry[normalizedField] = String(row[colIndex]);
+        // Map data from Excel columns to our fields based on the mapping
+        headers.forEach((_, colIndex) => {
+          const fieldName = fieldMapping.get(colIndex);
+          
+          if (fieldName && row[colIndex] !== undefined && row[colIndex] !== null) {
+            entry[fieldName] = String(row[colIndex]);
           }
         });
         

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft,
@@ -23,11 +22,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { InternshipEntry } from '@/lib/types';
+import { InternshipData } from '@/lib/types';
 
 interface InternshipTableProps {
-  data: InternshipEntry[];
-  onDataChange: (newData: InternshipEntry[]) => void;
+  data: InternshipData[];
+  onDataChange: (newData: InternshipData[]) => void;
   pageSize: number;
   onPageSizeChange: (size: number) => void;
   dynamicColumns?: string[];
@@ -42,22 +41,19 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingRow, setEditingRow] = useState<string | null>(null);
-  const [editedData, setEditedData] = useState<InternshipEntry | null>(null);
+  const [editedData, setEditedData] = useState<InternshipData | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeFileField, setActiveFileField] = useState<{id: string, field: string} | null>(null);
   
-  // Calculate pagination info
   const totalPages = Math.ceil(data.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, data.length);
   const currentData = data.slice(startIndex, endIndex);
 
-  // Handle page changes
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
-  // Start editing a row
   const startEditing = (id: string) => {
     if (editingRow) {
       toast.error('Please save or cancel the current edit first.');
@@ -71,17 +67,15 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     }
   };
 
-  // Save edited row
   const saveEditing = () => {
     if (!editingRow || !editedData) return;
 
-    // Validate required fields
     if (!editedData.rollNo || !editedData.name) {
       toast.error('Roll No and Name are required fields.');
       return;
     }
     
-    const updatedEntry: InternshipEntry = { 
+    const updatedEntry: InternshipData = { 
       ...editedData,
       isEditing: false,
       isNew: false
@@ -98,13 +92,11 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     toast.success('Data saved successfully!');
   };
 
-  // Cancel editing
   const cancelEditing = () => {
     setEditingRow(null);
     setEditedData(null);
   };
 
-  // Delete a row
   const deleteRow = (id: string) => {
     const newData = data.filter((row) => row.id !== id);
     onDataChange(newData);
@@ -114,7 +106,6 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     toast.success('Row deleted successfully!');
   };
 
-  // Add a new row
   const addNewRow = () => {
     if (editingRow) {
       toast.error('Please save or cancel the current edit first.');
@@ -122,7 +113,7 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     }
     
     const newId = `new-${Date.now()}`;
-    const newRow: InternshipEntry = {
+    const newRow: InternshipData = {
       id: newId,
       rollNo: '',
       name: '',
@@ -139,7 +130,6 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       isNew: true
     };
     
-    // Add dynamic columns with empty values
     dynamicColumns.forEach(col => {
       newRow[col] = '';
     });
@@ -148,7 +138,6 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     setEditingRow(newId);
     setEditedData(newRow);
     
-    // Auto-scroll to the bottom of the table
     setTimeout(() => {
       const tableContainer = document.querySelector('.table-container');
       if (tableContainer) {
@@ -157,20 +146,17 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     }, 100);
   };
 
-  // Handle input change in editable cells
   const handleInputChange = (
     field: string,
     value: string
   ) => {
     if (!editedData) return;
-    // Type assertion is necessary here to handle the dynamic fields
     setEditedData({ 
       ...editedData, 
       [field]: value 
     });
   };
 
-  // Trigger file input click
   const triggerFileInput = (id: string, field: string) => {
     setActiveFileField({id, field});
     if (fileInputRef.current) {
@@ -178,38 +164,32 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     }
   };
 
-  // Handle file selection
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!editedData || !activeFileField) return;
     
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Create a file name based on roll number and file type
     const fieldName = activeFileField.field;
     const fileName = `${editedData.rollNo}_${fieldName}.${file.name.split('.').pop()}`;
     
-    // Type assertion is necessary here because TypeScript doesn't know that fieldName is a key of editedData
     setEditedData({ 
       ...editedData, 
       [fieldName]: fileName 
     });
     toast.success(`File selected: ${fileName}`);
     
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
     setActiveFileField(null);
   };
 
-  // Render a table cell based on whether it's being edited
-  const renderCell = (row: InternshipEntry, field: string) => {
+  const renderCell = (row: InternshipData, field: string) => {
     const isEditing = row.id === editingRow;
     
-    // Special handling for file fields (noc, offerLetter, pop, and dynamic attendance columns)
     if (field === 'noc' || field === 'offerLetter' || field === 'pop' || field.startsWith('Attendance')) {
-      const fileValue = row[field];
+      const fileValue = row[field] as string;
       
       if (isEditing) {
         return (
@@ -253,7 +233,6 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       );
     }
     
-    // For other regular text fields
     if (isEditing) {
       return (
         <Input
@@ -267,7 +246,6 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     return <span>{row[field] as string}</span>;
   };
 
-  // All columns including dynamic ones
   const getAllColumns = () => {
     const baseColumns = [
       { id: 'rollNo', label: 'Roll No.' },
@@ -280,7 +258,6 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       { id: 'pop', label: 'PoP' },
     ];
     
-    // Add dynamic columns (like attendance)
     const withDynamicColumns = [
       ...baseColumns,
       ...dynamicColumns.map(col => ({ id: col, label: col }))
@@ -293,7 +270,6 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}

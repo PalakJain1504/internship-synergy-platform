@@ -12,15 +12,15 @@ import { toast } from 'sonner';
 import { Download, FileUp } from 'lucide-react';
 import { generateSampleInternships, filterInternships, exportInternshipTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Filter, InternshipEntry, InternshipData } from '@/lib/types';
+import { Filter, InternshipData } from '@/lib/types';
 
 const InternshipPortal = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [allInternships, setAllInternships] = useState<InternshipEntry[]>([]);
-  const [filteredInternships, setFilteredInternships] = useState<InternshipEntry[]>([]);
+  const [allInternships, setAllInternships] = useState<InternshipData[]>([]);
+  const [filteredInternships, setFilteredInternships] = useState<InternshipData[]>([]);
   const [currentFilters, setCurrentFilters] = useState<Filter>({
     year: '',
     semester: '',
@@ -35,7 +35,7 @@ const InternshipPortal = () => {
       navigate('/login');
     }
 
-    const sampleData = generateSampleInternships(40).map(p => ({ ...p } as InternshipEntry));
+    const sampleData = generateSampleInternships(40);
     
     const extraColumns = new Set<string>();
     sampleData.forEach(item => {
@@ -56,11 +56,11 @@ const InternshipPortal = () => {
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    const filtered = filterInternships(allInternships as unknown as InternshipData[], filters) as unknown as InternshipEntry[];
+    const filtered = filterInternships(allInternships, filters);
     setFilteredInternships(filtered);
   };
 
-  const handleDataChange = (newData: InternshipEntry[]) => {
+  const handleDataChange = (newData: InternshipData[]) => {
     setFilteredInternships(newData);
     
     const updatedAllInternships = allInternships.map(internship => {
@@ -77,19 +77,36 @@ const InternshipPortal = () => {
     setAllInternships(updatedAllInternships);
   };
 
-  const handleUpload = (entries: InternshipEntry[], metadata: Filter) => {
+  const handleUpload = (entries: InternshipData[], metadata: Filter) => {
+    // Check for new dynamic columns in the uploaded data
+    const newDynamicColumns = new Set<string>(dynamicColumns);
+    
+    entries.forEach(entry => {
+      Object.keys(entry).forEach(key => {
+        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "course", "isEditing", "isNew"].includes(key) && 
+            !dynamicColumns.includes(key)) {
+          newDynamicColumns.add(key);
+        }
+      });
+    });
+    
+    // Update dynamic columns if new ones were found
+    if (newDynamicColumns.size > dynamicColumns.length) {
+      setDynamicColumns(Array.from(newDynamicColumns));
+    }
+    
     const updatedInternships = [...allInternships, ...entries];
     
     setAllInternships(updatedInternships);
     setCurrentFilters(metadata);
     
-    const filtered = filterInternships(updatedInternships as unknown as InternshipData[], metadata) as unknown as InternshipEntry[];
+    const filtered = filterInternships(updatedInternships, metadata);
     setFilteredInternships(filtered);
   };
 
   const handleExportPDF = () => {
     exportInternshipTableToPDF(
-      filteredInternships as unknown as InternshipData[],
+      filteredInternships,
       currentFilters,
       'Internship Portal - Data Export'
     );

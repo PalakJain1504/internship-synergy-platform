@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -11,15 +12,15 @@ import { toast } from 'sonner';
 import { Download, FileUp } from 'lucide-react';
 import { generateSampleProjects, filterProjects, exportTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Filter, ProjectEntry } from '@/lib/types';
+import { Filter, ProjectData } from '@/lib/types';
 
 const ProjectPortal = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [allProjects, setAllProjects] = useState<ProjectEntry[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<ProjectEntry[]>([]);
+  const [allProjects, setAllProjects] = useState<ProjectData[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<ProjectData[]>([]);
   const [currentFilters, setCurrentFilters] = useState<Filter>({
     year: '',
     semester: '',
@@ -34,7 +35,7 @@ const ProjectPortal = () => {
       navigate('/login');
     }
 
-    const sampleData = generateSampleProjects(70).map(p => ({ ...p } as ProjectEntry));
+    const sampleData = generateSampleProjects(70);
     setAllProjects(sampleData);
     setFilteredProjects(sampleData);
     
@@ -44,11 +45,11 @@ const ProjectPortal = () => {
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    const filtered = filterProjects(allProjects, filters) as ProjectEntry[];
+    const filtered = filterProjects(allProjects, filters);
     setFilteredProjects(filtered);
   };
 
-  const handleDataChange = (newData: ProjectEntry[]) => {
+  const handleDataChange = (newData: ProjectData[]) => {
     setFilteredProjects(newData);
     
     const updatedAllProjects = allProjects.map(project => {
@@ -65,13 +66,13 @@ const ProjectPortal = () => {
     setAllProjects(updatedAllProjects);
   };
 
-  const handleUpload = (entries: ProjectEntry[], metadata: Filter) => {
+  const handleUpload = (entries: ProjectData[], metadata: Filter) => {
     const updatedProjects = [...allProjects, ...entries];
     
     setAllProjects(updatedProjects);
     setCurrentFilters(metadata);
     
-    const filtered = filterProjects(updatedProjects, metadata) as ProjectEntry[];
+    const filtered = filterProjects(updatedProjects, metadata);
     setFilteredProjects(filtered);
   };
 

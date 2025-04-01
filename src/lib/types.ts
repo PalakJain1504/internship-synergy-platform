@@ -22,7 +22,9 @@ export interface ProjectData {
   semester: string;
   course: string;
   facultyCoordinator: string;
-  [key: string]: string; // Add index signature to ProjectData
+  isEditing?: boolean;
+  isNew?: boolean;
+  [key: string]: string | boolean | undefined; // Update index signature to allow boolean and undefined
 }
 
 export interface InternshipData {
@@ -38,7 +40,9 @@ export interface InternshipData {
   year: string;
   semester: string;
   course: string;
-  [key: string]: string; // For dynamic attendance columns
+  isEditing?: boolean;
+  isNew?: boolean;
+  [key: string]: string | boolean | undefined; // Update for dynamic attendance columns
 }
 
 export interface Filter {
@@ -48,44 +52,6 @@ export interface Filter {
   facultyCoordinator?: string;
 }
 
-// Extended interfaces for table components
-export interface ProjectEntry {
-  id: string;
-  groupNo: string;
-  rollNo: string;
-  name: string;
-  email: string;
-  phoneNo: string;
-  title: string;
-  domain: string;
-  facultyMentor: string;
-  industryMentor: string;
-  form: string;
-  presentation: string;
-  report: string;
-  year: string;
-  semester: string;
-  course: string;
-  facultyCoordinator: string;
-  isEditing?: boolean;
-  isNew?: boolean;
-  [key: string]: string | boolean | undefined;
-}
-
-export interface InternshipEntry {
-  id: string;
-  rollNo: string;
-  name: string;
-  program: string;
-  organization: string;
-  dates: string;
-  noc: string;
-  offerLetter: string;
-  pop: string;
-  year: string;
-  semester: string;
-  course: string;
-  isEditing?: boolean;
-  isNew?: boolean;
-  [key: string]: string | boolean | undefined;
-}
+// Removing redundant interfaces since they're now identical to the base interfaces
+export type ProjectEntry = ProjectData;
+export type InternshipEntry = InternshipData;
