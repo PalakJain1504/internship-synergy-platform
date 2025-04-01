@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -196,7 +195,7 @@ const ProjectPortal = () => {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={(entries, metadata) => handleUpload(entries as ProjectEntry[], metadata)}
+        onUpload={(entries, metadata) => handleUpload(entries as ProjectData[], metadata)}
       />
     </div>
   );

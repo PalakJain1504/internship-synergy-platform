@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -239,7 +238,7 @@ const InternshipPortal = () => {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={(entries, metadata) => handleUpload(entries as InternshipEntry[], metadata)}
+        onUpload={(entries, metadata) => handleUpload(entries as InternshipData[], metadata)}
       />
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     missingRequired: boolean;
   } | null>(null);
 
-  // Reset state when modal is closed
   useEffect(() => {
     if (!isOpen) {
       setFile(null);
@@ -46,7 +44,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     }
   }, [isOpen]);
 
-  // Parse Excel file and return headers and rows
   const parseExcelFile = async (excelFile: File) => {
     return new Promise<{headers: string[], rows: any[]}>((resolve, reject) => {
       const reader = new FileReader();
@@ -58,7 +55,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           
-          // Convert to JSON with header row
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           
           if (jsonData.length < 2) {
@@ -83,7 +79,20 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     });
   };
 
-  // Handle file selection and preview
+  const checkForRequiredFields = (headers: string[]) => {
+    const normalizedHeaders = headers.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+    
+    const hasRollNumber = normalizedHeaders.some(h => {
+      return h.includes('roll') || h.includes('enrollment') || h.includes('rollno') || h.includes('rollnumber');
+    });
+    
+    const hasName = normalizedHeaders.some(h => {
+      return h.includes('name') || h.includes('student');
+    });
+    
+    return hasRollNumber && hasName;
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -99,30 +108,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       try {
         const { headers, rows } = await parseExcelFile(selectedFile);
         
-        // Check for required fields using a more flexible approach to match columns
-        const requiredPairs = [
-          [['roll', 'number'], ['rollno', 'rollnumber', 'roll', 'roll no', 'roll number']], 
-          [['student', 'name'], ['name', 'studentname', 'student name', 'full name']]
-        ];
+        const hasRequiredFields = checkForRequiredFields(headers);
         
-        const normalizedHeaders = headers.map(h => h.toLowerCase().replace(/\s/g, ''));
-        
-        // Check if at least one column matches each required field
-        let foundRequiredFields = true;
-        for (const [requiredConcepts, possibleMatches] of requiredPairs) {
-          // Check if any header contains all required concepts OR matches any possible match exactly
-          const hasMatch = normalizedHeaders.some(header => 
-            requiredConcepts.every(concept => header.includes(concept)) ||
-            possibleMatches.includes(header)
-          );
-          
-          if (!hasMatch) {
-            foundRequiredFields = false;
-            break;
-          }
-        }
-        
-        // Format rows for preview
         const formattedRows = rows.slice(0, 5).map(row => {
           return headers.map((_, index) => row[index] || '');
         });
@@ -130,7 +117,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
         setPreviewData({
           headers: headers,
           rows: formattedRows,
-          missingRequired: !foundRequiredFields
+          missingRequired: !hasRequiredFields
         });
       } catch (error) {
         console.error('Error parsing Excel file:', error);
@@ -141,97 +128,95 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     }
   };
 
-  // Handle metadata changes
   const handleMetadataChange = (key: keyof Filter, value: string) => {
     setMetadata((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Enhanced function to map Excel column headers to our field names with better pattern matching
   const getNormalizedFieldName = (header: string): string => {
-    const normalized = header.toLowerCase().replace(/\s/g, '');
+    const originalHeader = header;
+    const normalized = header.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     
-    // Comprehensive field mapping with pattern matching
     const fieldPatterns = [
-      // Roll number patterns
-      { pattern: /^s\.?no\.?$/i, field: 'id' },
-      { pattern: /^(roll|roll.?no|roll.?number|enrollment)$/i, field: 'rollNo' },
-      
-      // Name patterns
-      { pattern: /^(student.?name|name|full.?name)$/i, field: 'name' },
-      
-      // Program patterns
-      { pattern: /^(program|course|degree)$/i, field: 'program' },
-      
-      // Organization patterns
-      { pattern: /^(organization|company|org|name.*organization|internship.*organization)$/i, field: 'organization' },
-      
-      // Dates patterns
-      { pattern: /^(dates|duration|period|internship.?dates|internship.?period)$/i, field: 'dates' },
-      
-      // Document patterns
-      { pattern: /^(noc|no.?objection|certificate)$/i, field: 'noc' },
-      { pattern: /^(offer|offer.?letter|offer.?ltr)$/i, field: 'offerLetter' },
-      { pattern: /^(pop|proof|completion|certificate)$/i, field: 'pop' },
-      
-      // Attendance patterns - these will become dynamic columns
-      { pattern: /^attendance.*january$/i, field: 'Attendance January' },
-      { pattern: /^attendance.*february$/i, field: 'Attendance February' },
-      { pattern: /^attendance.*march$/i, field: 'Attendance March' },
-      { pattern: /^attendance.*april$/i, field: 'Attendance April' },
-      { pattern: /^attendance.*may$/i, field: 'Attendance May' },
-      { pattern: /^attendance.*june$/i, field: 'Attendance June' },
-      { pattern: /^attendance.*july$/i, field: 'Attendance July' },
-      { pattern: /^attendance.*august$/i, field: 'Attendance August' },
-      { pattern: /^attendance.*september$/i, field: 'Attendance September' },
-      { pattern: /^attendance.*october$/i, field: 'Attendance October' },
-      { pattern: /^attendance.*november$/i, field: 'Attendance November' },
-      { pattern: /^attendance.*december$/i, field: 'Attendance December' },
+      { pattern: /^(s\.?no\.?|sno|serial|serialno|serialnumber|num|number)$/i, field: 'id' },
+      { pattern: /^(roll|enrollment|rollno|rollnumber|rno|enroll|enrollmentno).*$/i, field: 'rollNo' },
+      { pattern: /^.*(student|full|name).*$/i, field: 'name' },
+      { pattern: /^(program|course|degree|branch|stream).*$/i, field: 'program' },
+      { pattern: /^.*(organization|company|org|internship|place).*$/i, field: 'organization' },
+      { pattern: /^.*(dates|duration|period|time|internship).*$/i, field: 'dates' },
+      { pattern: /^.*(noc|objection|certificate).*$/i, field: 'noc' },
+      { pattern: /^.*(offer|letter).*$/i, field: 'offerLetter' },
+      { pattern: /^.*(pop|proof|completion).*$/i, field: 'pop' },
+      { pattern: /^.*attendance.*january.*$/i, field: 'Attendance January' },
+      { pattern: /^.*attendance.*february.*$/i, field: 'Attendance February' },
+      { pattern: /^.*attendance.*march.*$/i, field: 'Attendance March' },
+      { pattern: /^.*attendance.*april.*$/i, field: 'Attendance April' },
+      { pattern: /^.*attendance.*may.*$/i, field: 'Attendance May' },
+      { pattern: /^.*attendance.*june.*$/i, field: 'Attendance June' },
+      { pattern: /^.*attendance.*july.*$/i, field: 'Attendance July' },
+      { pattern: /^.*attendance.*august.*$/i, field: 'Attendance August' },
+      { pattern: /^.*attendance.*september.*$/i, field: 'Attendance September' },
+      { pattern: /^.*attendance.*october.*$/i, field: 'Attendance October' },
+      { pattern: /^.*attendance.*november.*$/i, field: 'Attendance November' },
+      { pattern: /^.*attendance.*december.*$/i, field: 'Attendance December' },
     ];
     
-    // Try to match based on patterns first
     for (const { pattern, field } of fieldPatterns) {
       if (pattern.test(normalized)) {
         return field;
       }
     }
     
-    // Specific mappings as fallback for exact matches
     const fieldMappings: Record<string, string> = {
       'sno': 'id',
-      's.no': 'id',
+      'serialnumber': 'id',
       'roll': 'rollNo',
       'rollno': 'rollNo',
       'rollnumber': 'rollNo',
-      'roll_no': 'rollNo',
-      'roll_number': 'rollNo',
       'studentname': 'name',
-      'student': 'name',
-      'studentfullname': 'name',
+      'name': 'name',
       'fullname': 'name',
+      'organization': 'organization',
       'org': 'organization',
       'company': 'organization',
-      'internshipcompany': 'organization',
       'nameoftheorganizationfromwhereinternshipisdone': 'organization',
+      'organizationfromwhereinternshipisdone': 'organization',
       'date': 'dates',
-      'internshipdates': 'dates',
       'duration': 'dates',
       'period': 'dates',
-      'noobjection': 'noc',
-      'nocobjectioncertificate': 'noc',
+      'noobjectioncertificate': 'noc',
+      'certificate': 'noc',
+      'offerletter': 'offerLetter',
       'offer': 'offerLetter',
-      'offerltr': 'offerLetter',
-      'proofofparticipation': 'pop',
-      'completion': 'pop',
-      'completioncertificate': 'pop',
+      'pop': 'pop',
+      'proof': 'pop',
       'attendancejanuary': 'Attendance January',
       'attendancefebruary': 'Attendance February',
+      'january': 'Attendance January',
+      'february': 'Attendance February',
     };
     
-    // Try exact match from our mapping
-    return fieldMappings[normalized] || header; // If no match found, keep the original header
+    console.log(`Processing header: "${originalHeader}" -> normalized: "${normalized}"`);
+    
+    if (fieldMappings[normalized]) {
+      return fieldMappings[normalized];
+    }
+    
+    if (normalized.includes('attendance')) {
+      const months = ['january', 'february', 'march', 'april', 'may', 'june', 
+                      'july', 'august', 'september', 'october', 'november', 'december'];
+      
+      for (const month of months) {
+        if (normalized.includes(month)) {
+          return `Attendance ${month.charAt(0).toUpperCase() + month.slice(1)}`;
+        }
+      }
+      
+      return `Attendance`;
+    }
+    
+    return originalHeader;
   };
 
-  // Handle Excel upload with improved column matching
   const handleUpload = async () => {
     if (!file) {
       toast.error('Please select a file to upload');
@@ -251,27 +236,24 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     setIsUploading(true);
 
     try {
-      // Get all the data rows from the Excel file
       const { headers, rows } = await parseExcelFile(file);
       
-      // Create a mapping from Excel headers to our field names
+      console.log("Original headers:", headers);
+      
       const fieldMapping = new Map<number, string>();
       
-      // Map each column index to our standardized field name
       headers.forEach((header, index) => {
         const normalizedFieldName = getNormalizedFieldName(header);
         fieldMapping.set(index, normalizedFieldName);
         console.log(`Mapped column "${header}" to field "${normalizedFieldName}"`);
       });
       
-      // Transform Excel data to entry format using the mapping
       const entries = rows.map((row, rowIndex) => {
         const entry: Record<string, string> = {
           id: `upload-${Date.now()}-${rowIndex}`,
           year: metadata.year,
           semester: metadata.semester,
           course: metadata.course,
-          // Initialize required fields with empty strings
           rollNo: '',
           name: '',
           program: '',
@@ -282,7 +264,10 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           pop: '',
         };
         
-        // Map data from Excel columns to our fields based on the mapping
+        if (metadata.facultyCoordinator) {
+          entry.facultyCoordinator = metadata.facultyCoordinator;
+        }
+        
         headers.forEach((_, colIndex) => {
           const fieldName = fieldMapping.get(colIndex);
           
@@ -380,7 +365,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                       {previewData.headers.map((header, index) => {
                         const normalizedHeader = header.toLowerCase().replace(/\s/g, '');
                         const isRequired = ['rollno', 'name'].includes(normalizedHeader) || 
-                                         normalizedHeader.includes('roll') && normalizedHeader.includes('no');
+                                        normalizedHeader.includes('roll') && normalizedHeader.includes('no');
                         
                         return (
                           <th 
