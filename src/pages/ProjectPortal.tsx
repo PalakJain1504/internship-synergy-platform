@@ -8,7 +8,7 @@ import FileUpload from '@/components/FileUpload';
 import UploadModal from '@/components/UploadModal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Download, Upload, FileUp, DatabaseIcon } from 'lucide-react';
+import { Download, FileUp } from 'lucide-react';
 import { generateSampleProjects, filterProjects, exportTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Filter, ProjectEntry } from '@/lib/types';
@@ -45,7 +45,7 @@ const ProjectPortal = () => {
     setCurrentFilters(filters);
     
     const filtered = filterProjects(allProjects, filters);
-    setFilteredProjects(filtered);
+    setFilteredProjects(filtered as ProjectEntry[]);
   };
 
   const handleDataChange = (newData: ProjectEntry[]) => {
@@ -72,7 +72,7 @@ const ProjectPortal = () => {
     setCurrentFilters(metadata);
     
     const filtered = filterProjects(updatedProjects, metadata);
-    setFilteredProjects(filtered);
+    setFilteredProjects(filtered as ProjectEntry[]);
   };
 
   const handleExportPDF = () => {

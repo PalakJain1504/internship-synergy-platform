@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -12,7 +11,7 @@ import { toast } from 'sonner';
 import { Download, FileUp } from 'lucide-react';
 import { generateSampleInternships, filterInternships, exportInternshipTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Filter, InternshipEntry, InternshipData } from '@/lib/types';
+import { Filter, InternshipEntry } from '@/lib/types';
 
 const InternshipPortal = () => {
   const navigate = useNavigate();
@@ -56,7 +55,7 @@ const InternshipPortal = () => {
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    const filtered = filterInternships(allInternships as InternshipData[], filters);
+    const filtered = filterInternships(allInternships, filters);
     setFilteredInternships(filtered as InternshipEntry[]);
   };
 
@@ -83,13 +82,13 @@ const InternshipPortal = () => {
     setAllInternships(updatedInternships);
     setCurrentFilters(metadata);
     
-    const filtered = filterInternships(updatedInternships as InternshipData[], metadata);
+    const filtered = filterInternships(updatedInternships, metadata);
     setFilteredInternships(filtered as InternshipEntry[]);
   };
 
   const handleExportPDF = () => {
     exportInternshipTableToPDF(
-      filteredInternships as InternshipData[],
+      filteredInternships,
       currentFilters,
       'Internship Portal - Data Export'
     );
@@ -222,7 +221,7 @@ const InternshipPortal = () => {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleUpload}
+        onUpload={(entries, metadata) => handleUpload(entries as InternshipEntry[], metadata)}
       />
     </div>
   );

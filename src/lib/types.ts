@@ -22,6 +22,7 @@ export interface ProjectData {
   semester: string;
   course: string;
   facultyCoordinator: string;
+  [key: string]: string; // Add index signature to ProjectData
 }
 
 export interface InternshipData {

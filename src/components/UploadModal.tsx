@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 import { Filter, ProjectEntry, InternshipEntry } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import * as XLSX from 'xlsx';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -35,7 +36,51 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     missingRequired: boolean;
   } | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (!isOpen) {
+      setFile(null);
+      setPreviewData(null);
+      setIsUploading(false);
+    }
+  }, [isOpen]);
+
+  const parseExcelFile = async (excelFile: File) => {
+    return new Promise<{headers: string[], rows: any[]}>((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          
+          // Convert to JSON with header row
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          if (jsonData.length < 2) {
+            reject(new Error('Excel file must contain headers and at least one data row'));
+            return;
+          }
+          
+          const headers = jsonData[0] as string[];
+          const rows = jsonData.slice(1) as any[];
+          
+          resolve({ headers, rows });
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      
+      reader.readAsBinaryString(excelFile);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
@@ -44,25 +89,34 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
         e.target.value = '';
         return;
       }
+      
       setFile(selectedFile);
       
-      setTimeout(() => {
-        const mockHeaders = ['groupNo', 'rollNo', 'name', 'email', 'phoneNo', 'title', 'domain', 'facultyMentor', 'industryMentor'];
-        const mockRows = [
-          ['G1', 'R101', 'John Doe', 'john@example.com', '9876543210', 'AI Project', 'Machine Learning', 'Dr. Sharma', 'Mr. Patel'],
-          ['G1', 'R102', 'Jane Smith', 'jane@example.com', '9876543211', '', '', '', ''],
-          ['G2', 'R103', 'Alex Kim', 'alex@example.com', '9876543212', 'Web App', 'Web Development', 'Dr. Singh', 'Ms. Gupta'],
-        ];
+      try {
+        const { headers, rows } = await parseExcelFile(selectedFile);
         
+        // Check for required fields
         const requiredFields = ['groupNo', 'rollNo', 'name'];
-        const hasAllRequired = requiredFields.every(field => mockHeaders.includes(field));
+        const hasAllRequired = requiredFields.every(field => 
+          headers.map(h => h.toLowerCase().replace(/\s/g, '')).includes(field.toLowerCase())
+        );
+        
+        // Format rows for preview
+        const formattedRows = rows.slice(0, 5).map(row => {
+          return headers.map((_, index) => row[index] || '');
+        });
         
         setPreviewData({
-          headers: mockHeaders,
-          rows: mockRows,
+          headers: headers,
+          rows: formattedRows,
           missingRequired: !hasAllRequired
         });
-      }, 500);
+      } catch (error) {
+        console.error('Error parsing Excel file:', error);
+        toast.error('Failed to parse Excel file. Please check the format.');
+        setFile(null);
+        e.target.value = '';
+      }
     }
   };
 
@@ -70,7 +124,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     setMetadata((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file) {
       toast.error('Please select a file to upload');
       return;
@@ -88,37 +142,44 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
 
     setIsUploading(true);
 
-    setTimeout(() => {
-      const entries = previewData?.rows.map((row, index) => {
-        const entry = {
+    try {
+      // Get all the data rows from the Excel file
+      const { headers, rows } = await parseExcelFile(file);
+      
+      // Transform Excel data to ProjectEntry or InternshipEntry format
+      const entries = rows.map((row, index) => {
+        const entry: Record<string, string> = {
           id: `upload-${Date.now()}-${index}`,
-          groupNo: row[0] || '',
-          rollNo: row[1] || '',
-          name: row[2] || '',
-          email: row[3] || '',
-          phoneNo: row[4] || '',
-          title: row[5] || '',
-          domain: row[6] || '',
-          facultyMentor: row[7] || '',
-          industryMentor: row[8] || '',
-          form: '',
-          presentation: '',
-          report: '',
           year: metadata.year,
           semester: metadata.semester,
           course: metadata.course,
           facultyCoordinator: metadata.facultyCoordinator || '',
         };
+        
+        // Map Excel columns to entry properties
+        headers.forEach((header, colIndex) => {
+          const normalizedHeader = header.toLowerCase().replace(/\s/g, '');
+          if (row[colIndex] !== undefined && row[colIndex] !== null) {
+            entry[normalizedHeader] = String(row[colIndex]);
+          } else {
+            entry[normalizedHeader] = '';
+          }
+        });
+        
         return entry;
-      }) || [];
+      });
 
-      onUpload(entries as ProjectEntry[], metadata);
+      onUpload(entries as any, metadata);
       setIsUploading(false);
       setFile(null);
       setPreviewData(null);
       toast.success(`Successfully uploaded ${entries.length} entries`);
       onClose();
-    }, 1500);
+    } catch (error) {
+      console.error('Error during upload:', error);
+      toast.error('Failed to upload Excel data');
+      setIsUploading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -194,11 +255,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                         <th 
                           key={index}
                           className={`px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                            ['groupNo', 'rollNo', 'name'].includes(header) ? 'bg-yellow-50' : ''
+                            ['groupNo', 'rollNo', 'name'].includes(header.toLowerCase().replace(/\s/g, '')) ? 'bg-yellow-50' : ''
                           }`}
                         >
                           {header}
-                          {['groupNo', 'rollNo', 'name'].includes(header) && (
+                          {['groupNo', 'rollNo', 'name'].includes(header.toLowerCase().replace(/\s/g, '')) && (
                             <span className="text-red-500 ml-1">*</span>
                           )}
                         </th>
@@ -206,7 +267,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {previewData.rows.slice(0, 3).map((row, rowIndex) => (
+                    {previewData.rows.map((row, rowIndex) => (
                       <tr key={rowIndex}>
                         {row.map((cell, cellIndex) => (
                           <td 
@@ -224,7 +285,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
               </div>
               
               <p className="text-xs text-gray-500">
-                Showing preview of first 3 rows from your Excel file.
+                Showing preview of first 5 rows from your Excel file.
                 Fields marked with <span className="text-red-500">*</span> are required.
                 Missing values for optional fields can be filled manually later.
               </p>
