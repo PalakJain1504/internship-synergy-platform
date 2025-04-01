@@ -63,10 +63,16 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           }
           
           const headers = jsonData[0] as string[];
+          console.log("Raw headers from Excel:", headers);
+          
+          const filteredHeaders = headers.filter(h => h !== undefined && h !== null && h.toString().trim() !== '');
+          console.log("Filtered headers:", filteredHeaders);
+          
           const rows = jsonData.slice(1) as any[];
           
-          resolve({ headers, rows });
+          resolve({ headers: filteredHeaders, rows });
         } catch (error) {
+          console.error("Error parsing Excel:", error);
           reject(error);
         }
       };
@@ -80,16 +86,28 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
   };
 
   const checkForRequiredFields = (headers: string[]) => {
-    const normalizedHeaders = headers.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+    console.log("Checking required fields in headers:", headers);
     
-    const hasRollNumber = normalizedHeaders.some(h => {
-      return h.includes('roll') || h.includes('enrollment') || h.includes('rollno') || h.includes('rollnumber');
+    const headerStrings = headers.map(h => String(h).trim().toLowerCase());
+    console.log("Normalized header strings:", headerStrings);
+    
+    const hasRollNumber = headerStrings.some(h => {
+      const patterns = [
+        'roll', 'enrollment', 'rollno', 'rollnumber', 'rno', 'roll no', 'roll number',
+        'enroll', 'enrollno', 'enrolment', 'registration', 'regno', 'registration no',
+        'registration number', 'id'
+      ];
+      return patterns.some(pattern => h.includes(pattern));
     });
     
-    const hasName = normalizedHeaders.some(h => {
-      return h.includes('name') || h.includes('student');
+    const hasName = headerStrings.some(h => {
+      const patterns = [
+        'name', 'student', 'student name', 'studentname', 'full name', 'fullname'
+      ];
+      return patterns.some(pattern => h.includes(pattern));
     });
     
+    console.log(`Has Roll Number: ${hasRollNumber}, Has Name: ${hasName}`);
     return hasRollNumber && hasName;
   };
 
@@ -107,11 +125,17 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       
       try {
         const { headers, rows } = await parseExcelFile(selectedFile);
+        console.log("Parsed headers:", headers);
+        console.log("First row sample:", rows[0]);
         
         const hasRequiredFields = checkForRequiredFields(headers);
         
-        const formattedRows = rows.slice(0, 5).map(row => {
-          return headers.map((_, index) => row[index] || '');
+        const previewRows = Math.min(rows.length, 5);
+        const formattedRows = rows.slice(0, previewRows).map(row => {
+          return headers.map((_, index) => {
+            const value = row[index];
+            return (value !== undefined && value !== null) ? String(value) : '';
+          });
         });
         
         setPreviewData({
@@ -133,75 +157,55 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
   };
 
   const getNormalizedFieldName = (header: string): string => {
-    const originalHeader = header;
-    const normalized = header.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-    
-    const fieldPatterns = [
-      { pattern: /^(s\.?no\.?|sno|serial|serialno|serialnumber|num|number)$/i, field: 'id' },
-      { pattern: /^(roll|enrollment|rollno|rollnumber|rno|enroll|enrollmentno).*$/i, field: 'rollNo' },
-      { pattern: /^.*(student|full|name).*$/i, field: 'name' },
-      { pattern: /^(program|course|degree|branch|stream).*$/i, field: 'program' },
-      { pattern: /^.*(organization|company|org|internship|place).*$/i, field: 'organization' },
-      { pattern: /^.*(dates|duration|period|time|internship).*$/i, field: 'dates' },
-      { pattern: /^.*(noc|objection|certificate).*$/i, field: 'noc' },
-      { pattern: /^.*(offer|letter).*$/i, field: 'offerLetter' },
-      { pattern: /^.*(pop|proof|completion).*$/i, field: 'pop' },
-      { pattern: /^.*attendance.*january.*$/i, field: 'Attendance January' },
-      { pattern: /^.*attendance.*february.*$/i, field: 'Attendance February' },
-      { pattern: /^.*attendance.*march.*$/i, field: 'Attendance March' },
-      { pattern: /^.*attendance.*april.*$/i, field: 'Attendance April' },
-      { pattern: /^.*attendance.*may.*$/i, field: 'Attendance May' },
-      { pattern: /^.*attendance.*june.*$/i, field: 'Attendance June' },
-      { pattern: /^.*attendance.*july.*$/i, field: 'Attendance July' },
-      { pattern: /^.*attendance.*august.*$/i, field: 'Attendance August' },
-      { pattern: /^.*attendance.*september.*$/i, field: 'Attendance September' },
-      { pattern: /^.*attendance.*october.*$/i, field: 'Attendance October' },
-      { pattern: /^.*attendance.*november.*$/i, field: 'Attendance November' },
-      { pattern: /^.*attendance.*december.*$/i, field: 'Attendance December' },
-    ];
-    
-    for (const { pattern, field } of fieldPatterns) {
-      if (pattern.test(normalized)) {
-        return field;
-      }
+    if (header === undefined || header === null) {
+      return 'unknown';
     }
     
-    const fieldMappings: Record<string, string> = {
-      'sno': 'id',
-      'serialnumber': 'id',
-      'roll': 'rollNo',
-      'rollno': 'rollNo',
-      'rollnumber': 'rollNo',
-      'studentname': 'name',
-      'name': 'name',
-      'fullname': 'name',
-      'organization': 'organization',
-      'org': 'organization',
-      'company': 'organization',
-      'nameoftheorganizationfromwhereinternshipisdone': 'organization',
-      'organizationfromwhereinternshipisdone': 'organization',
-      'date': 'dates',
-      'duration': 'dates',
-      'period': 'dates',
-      'noobjectioncertificate': 'noc',
-      'certificate': 'noc',
-      'offerletter': 'offerLetter',
-      'offer': 'offerLetter',
-      'pop': 'pop',
-      'proof': 'pop',
-      'attendancejanuary': 'Attendance January',
-      'attendancefebruary': 'Attendance February',
-      'january': 'Attendance January',
-      'february': 'Attendance February',
-    };
+    const originalHeader = String(header);
+    const normalized = originalHeader.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     
-    console.log(`Processing header: "${originalHeader}" -> normalized: "${normalized}"`);
+    console.log(`Normalizing header: "${originalHeader}" -> "${normalized}"`);
     
-    if (fieldMappings[normalized]) {
-      return fieldMappings[normalized];
+    if (/^(s\.?no\.?|sno|serial|serialno|serialnumber|num|number|column\d+)$/i.test(normalized) || 
+        normalized === '' || normalized === 'column1') {
+      return 'id';
     }
     
-    if (normalized.includes('attendance')) {
+    if (/roll|enrollment|rno|enrollno|registration|regno|regist/i.test(normalized)) {
+      console.log(`  Matched as roll number: "${originalHeader}"`);
+      return 'rollNo';
+    }
+    
+    if (/name|student/i.test(normalized)) {
+      console.log(`  Matched as student name: "${originalHeader}"`);
+      return 'name';
+    }
+    
+    if (/program|course|degree|branch|stream/i.test(normalized)) {
+      return 'program';
+    }
+    
+    if (/organization|company|org|internship|place|where/i.test(normalized)) {
+      return 'organization';
+    }
+    
+    if (/dates|duration|period|time/i.test(normalized)) {
+      return 'dates';
+    }
+    
+    if (/noc|objection|certificate/i.test(normalized)) {
+      return 'noc';
+    }
+    
+    if (/offer|letter/i.test(normalized)) {
+      return 'offerLetter';
+    }
+    
+    if (/pop|proof|completion/i.test(normalized)) {
+      return 'pop';
+    }
+    
+    if (/attendance/i.test(normalized)) {
       const months = ['january', 'february', 'march', 'april', 'may', 'june', 
                       'july', 'august', 'september', 'october', 'november', 'december'];
       
@@ -211,7 +215,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
         }
       }
       
-      return `Attendance`;
+      return 'Attendance';
     }
     
     return originalHeader;
@@ -228,24 +232,24 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       return;
     }
 
-    if (previewData?.missingRequired) {
-      toast.error('The Excel file is missing required columns (Roll No and Name)');
-      return;
-    }
-
     setIsUploading(true);
 
     try {
       const { headers, rows } = await parseExcelFile(file);
       
-      console.log("Original headers:", headers);
+      console.log("Headers for mapping:", headers);
       
       const fieldMapping = new Map<number, string>();
       
       headers.forEach((header, index) => {
+        if (header === undefined || header === null || header.toString().trim() === '') {
+          fieldMapping.set(index, `column${index}`);
+          return;
+        }
+        
         const normalizedFieldName = getNormalizedFieldName(header);
         fieldMapping.set(index, normalizedFieldName);
-        console.log(`Mapped column "${header}" to field "${normalizedFieldName}"`);
+        console.log(`Mapped column "${header}" (index ${index}) to field "${normalizedFieldName}"`);
       });
       
       const entries = rows.map((row, rowIndex) => {
@@ -268,17 +272,58 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           entry.facultyCoordinator = metadata.facultyCoordinator;
         }
         
-        headers.forEach((_, colIndex) => {
+        for (let colIndex = 0; colIndex < headers.length; colIndex++) {
           const fieldName = fieldMapping.get(colIndex);
           
           if (fieldName && row[colIndex] !== undefined && row[colIndex] !== null) {
             entry[fieldName] = String(row[colIndex]);
+            console.log(`Setting ${fieldName} = ${entry[fieldName]} from column ${colIndex}`);
           }
-        });
+        }
+        
+        if (!entry.rollNo || entry.rollNo.trim() === '') {
+          const potentialRollColumns = [1, 2, 3];
+          for (const col of potentialRollColumns) {
+            if (row[col] && String(row[col]).trim() !== '') {
+              const value = String(row[col]);
+              if (/^\d+$/.test(value) || /^[A-Za-z]+\d+/.test(value)) {
+                entry.rollNo = value;
+                console.log(`Inferred rollNo = ${value} from column ${col}`);
+                break;
+              }
+            }
+          }
+        }
+        
+        if (!entry.name || entry.name.trim() === '') {
+          const potentialNameColumns = [2, 3, 4];
+          for (const col of potentialNameColumns) {
+            if (row[col] && String(row[col]).trim() !== '') {
+              const value = String(row[col]);
+              if (!/^\d+$/.test(value)) {
+                entry.name = value;
+                console.log(`Inferred name = ${value} from column ${col}`);
+                break;
+              }
+            }
+          }
+        }
+        
+        if (!entry.rollNo || entry.rollNo.trim() === '') {
+          entry.rollNo = `R${rowIndex + 1000}`;
+          console.log(`Generated default rollNo = ${entry.rollNo}`);
+        }
+        
+        if (!entry.name || entry.name.trim() === '') {
+          entry.name = `Student ${rowIndex + 1}`;
+          console.log(`Generated default name = ${entry.name}`);
+        }
         
         return entry;
       });
 
+      console.log(`Successfully processed ${entries.length} entries`);
+      
       onUpload(entries as any, metadata);
       setIsUploading(false);
       setFile(null);
@@ -352,8 +397,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Missing Required Fields</AlertTitle>
                   <AlertDescription>
-                    Your Excel file must include at minimum the following columns: 'Roll No' and 'Name'.
-                    These can be in any case or format (e.g., "Roll No.", "roll_no", "Roll Number").
+                    Your Excel file has columns that couldn't be identified as Roll Number and Student Name.
+                    The system will attempt to map data using available columns, but please check the results carefully.
                   </AlertDescription>
                 </Alert>
               )}
@@ -363,9 +408,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                   <thead className="bg-gray-50">
                     <tr>
                       {previewData.headers.map((header, index) => {
-                        const normalizedHeader = header.toLowerCase().replace(/\s/g, '');
-                        const isRequired = ['rollno', 'name'].includes(normalizedHeader) || 
-                                        normalizedHeader.includes('roll') && normalizedHeader.includes('no');
+                        const normalizedField = getNormalizedFieldName(header);
+                        const isRequired = normalizedField === 'rollNo' || normalizedField === 'name';
                         
                         return (
                           <th 
@@ -404,7 +448,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
               <p className="text-xs text-gray-500">
                 Showing preview of first 5 rows from your Excel file.
                 Fields marked with <span className="text-red-500">*</span> are required.
-                The system will automatically map common column variations (e.g., "Roll No", "Roll Number", "Roll_No") to the correct fields.
+                The system will automatically map common column variations and generate default values if needed.
               </p>
             </div>
           )}
@@ -500,7 +544,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
             <Button
               className="bg-brand-blue hover:bg-brand-darkBlue"
               onClick={handleUpload}
-              disabled={isUploading || !file || (previewData?.missingRequired || false)}
+              disabled={isUploading || !file}
             >
               {isUploading ? (
                 <>
