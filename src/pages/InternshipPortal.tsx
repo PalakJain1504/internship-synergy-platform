@@ -55,8 +55,8 @@ const InternshipPortal = () => {
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    const filtered = filterInternships(allInternships, filters);
-    setFilteredInternships(filtered as InternshipEntry[]);
+    const filtered = filterInternships(allInternships, filters) as InternshipEntry[];
+    setFilteredInternships(filtered);
   };
 
   const handleDataChange = (newData: InternshipEntry[]) => {
@@ -82,8 +82,8 @@ const InternshipPortal = () => {
     setAllInternships(updatedInternships);
     setCurrentFilters(metadata);
     
-    const filtered = filterInternships(updatedInternships, metadata);
-    setFilteredInternships(filtered as InternshipEntry[]);
+    const filtered = filterInternships(updatedInternships, metadata) as InternshipEntry[];
+    setFilteredInternships(filtered);
   };
 
   const handleExportPDF = () => {

@@ -49,13 +49,15 @@ export interface Filter {
 }
 
 // Extended interfaces for table components
-export interface ProjectEntry extends ProjectData {
+export interface ProjectEntry extends Omit<ProjectData, 'id'> {
+  id: string;
   isEditing?: boolean;
   isNew?: boolean;
   [key: string]: string | boolean | undefined;
 }
 
-export interface InternshipEntry extends InternshipData {
+export interface InternshipEntry extends Omit<InternshipData, 'id'> {
+  id: string;
   isEditing?: boolean;
   isNew?: boolean;
   [key: string]: string | boolean | undefined;

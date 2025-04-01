@@ -44,8 +44,8 @@ const ProjectPortal = () => {
   const handleFilterChange = (filters: Filter) => {
     setCurrentFilters(filters);
     
-    const filtered = filterProjects(allProjects, filters);
-    setFilteredProjects(filtered as ProjectEntry[]);
+    const filtered = filterProjects(allProjects, filters) as ProjectEntry[];
+    setFilteredProjects(filtered);
   };
 
   const handleDataChange = (newData: ProjectEntry[]) => {
@@ -71,8 +71,8 @@ const ProjectPortal = () => {
     setAllProjects(updatedProjects);
     setCurrentFilters(metadata);
     
-    const filtered = filterProjects(updatedProjects, metadata);
-    setFilteredProjects(filtered as ProjectEntry[]);
+    const filtered = filterProjects(updatedProjects, metadata) as ProjectEntry[];
+    setFilteredProjects(filtered);
   };
 
   const handleExportPDF = () => {
