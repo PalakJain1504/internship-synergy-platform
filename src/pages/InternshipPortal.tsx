@@ -25,9 +25,9 @@ const InternshipPortal = () => {
     year: '',
     semester: '',
     session: '',
+    program: '',
   });
   const [pageSize, setPageSize] = useState(50);
-  const [driveConnected, setDriveConnected] = useState(false);
   const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
 
@@ -48,7 +48,14 @@ const InternshipPortal = () => {
     withSessionData.forEach(item => {
       Object.keys(item).forEach(key => {
         if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session"].includes(key)) {
-          extraColumns.add(key);
+          if (key.startsWith('Attendance')) {
+            const month = key.replace('Attendance ', '').toLowerCase();
+            if (month !== 'may' && month !== 'june') {
+              extraColumns.add(key);
+            }
+          } else {
+            extraColumns.add(key);
+          }
         }
       });
     });
@@ -106,9 +113,15 @@ const InternshipPortal = () => {
     
     entries.forEach(entry => {
       Object.keys(entry).forEach(key => {
-        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session", "isEditing", "isNew"].includes(key) && 
-            !dynamicColumns.includes(key)) {
-          newDynamicColumns.add(key);
+        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session", "isEditing", "isNew"].includes(key)) {
+          if (key.startsWith('Attendance')) {
+            const month = key.replace('Attendance ', '').toLowerCase();
+            if (month !== 'may' && month !== 'june' && !dynamicColumns.includes(key)) {
+              newDynamicColumns.add(key);
+            }
+          } else if (!dynamicColumns.includes(key)) {
+            newDynamicColumns.add(key);
+          }
         }
       });
     });
@@ -128,13 +141,40 @@ const InternshipPortal = () => {
     
     setAvailableSessions(Array.from(sessions));
     
-    const updatedInternships = [...allInternships, ...entries];
+    // Update internships data by matching on rollNo and program
+    const updatedInternships = [...allInternships];
+    let newEntries = 0;
+    
+    entries.forEach(entry => {
+      const existingIndex = updatedInternships.findIndex(
+        item => item.rollNo === entry.rollNo && item.program === entry.program
+      );
+      
+      if (existingIndex >= 0) {
+        // Update existing entry
+        updatedInternships[existingIndex] = {
+          ...updatedInternships[existingIndex],
+          ...entry,
+          id: updatedInternships[existingIndex].id // Keep original ID
+        };
+      } else {
+        // Add new entry
+        updatedInternships.push(entry);
+        newEntries++;
+      }
+    });
     
     setAllInternships(updatedInternships);
-    setCurrentFilters(metadata);
+    
+    if (newEntries > 0) {
+      toast.success(`Added ${newEntries} new entries`);
+    } else {
+      toast.success(`Updated ${entries.length} existing entries`);
+    }
     
     const filtered = filterInternships(updatedInternships, metadata);
     setFilteredInternships(filtered);
+    setCurrentFilters(metadata);
   };
 
   const handleExportPDF = () => {
@@ -148,7 +188,6 @@ const InternshipPortal = () => {
 
   const handleDriveConnect = (driveLink: string) => {
     console.log('Connected to Google Drive:', driveLink);
-    setDriveConnected(true);
     toast.success('Successfully connected to Google Drive');
   };
 

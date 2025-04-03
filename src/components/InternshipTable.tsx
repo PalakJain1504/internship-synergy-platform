@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft,
@@ -252,6 +251,7 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       { id: 'rollNo', label: 'Roll No.' },
       { id: 'name', label: 'Student Name' },
       { id: 'program', label: 'Program' },
+      { id: 'year', label: 'Year' },
       { id: 'session', label: 'Session' },
       { id: 'organization', label: 'Organization' },
       { id: 'dates', label: 'Dates' },
@@ -260,9 +260,17 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       { id: 'pop', label: 'PoP' },
     ];
     
+    const filteredDynamicColumns = dynamicColumns.filter(col => {
+      if (col.startsWith('Attendance')) {
+        const month = col.replace('Attendance ', '').toLowerCase();
+        return month !== 'may' && month !== 'june';
+      }
+      return true;
+    });
+    
     const withDynamicColumns = [
       ...baseColumns,
-      ...dynamicColumns.map(col => ({ id: col, label: col }))
+      ...filteredDynamicColumns.map(col => ({ id: col, label: col }))
     ];
     
     return withDynamicColumns;

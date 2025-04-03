@@ -50,6 +50,7 @@ export interface Filter {
   semester: string;
   session: string;
   facultyCoordinator?: string;
+  program?: string;
 }
 
 // Removing redundant interfaces since they're now identical to the base interfaces

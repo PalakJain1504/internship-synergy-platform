@@ -103,7 +103,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 <SelectValue placeholder="Select Year" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Years</SelectItem>
+                <SelectItem value="all-years">All Years</SelectItem>
                 {years.map((year) => (
                   <SelectItem key={year} value={year}>
                     {year}
@@ -120,7 +120,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 <SelectValue placeholder="Select Semester" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Semesters</SelectItem>
+                <SelectItem value="all-semesters">All Semesters</SelectItem>
                 {semesters.map((semester) => (
                   <SelectItem key={semester} value={semester}>
                     {semester}
@@ -137,7 +137,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 <SelectValue placeholder="Select Session" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Sessions</SelectItem>
+                <SelectItem value="all-sessions">All Sessions</SelectItem>
                 {uniqueSessions.map((session) => (
                   session !== 'all-sessions' && (
                     <SelectItem key={session} value={session}>
@@ -156,7 +156,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 <SelectValue placeholder="Select Coordinator" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Coordinators</SelectItem>
+                <SelectItem value="all-coordinators">All Coordinators</SelectItem>
                 {facultyCoordinators.map((coordinator) => (
                   <SelectItem key={coordinator} value={coordinator}>
                     {coordinator}

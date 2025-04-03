@@ -28,7 +28,6 @@ const ProjectPortal = () => {
     facultyCoordinator: '',
   });
   const [pageSize, setPageSize] = useState(50);
-  const [driveConnected, setDriveConnected] = useState(false);
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
 
   useEffect(() => {
@@ -101,10 +100,37 @@ const ProjectPortal = () => {
     
     setAvailableSessions(Array.from(sessions));
     
-    const updatedProjects = [...allProjects, ...entries];
+    // Update projects data by matching on rollNo, groupNo, and name
+    const updatedProjects = [...allProjects];
+    let newEntries = 0;
+    
+    entries.forEach(entry => {
+      const existingIndex = updatedProjects.findIndex(
+        item => item.rollNo === entry.rollNo && item.groupNo === entry.groupNo
+      );
+      
+      if (existingIndex >= 0) {
+        // Update existing entry
+        updatedProjects[existingIndex] = {
+          ...updatedProjects[existingIndex],
+          ...entry,
+          id: updatedProjects[existingIndex].id // Keep original ID
+        };
+      } else {
+        // Add new entry
+        updatedProjects.push(entry);
+        newEntries++;
+      }
+    });
     
     setAllProjects(updatedProjects);
     setCurrentFilters(metadata);
+    
+    if (newEntries > 0) {
+      toast.success(`Added ${newEntries} new entries`);
+    } else {
+      toast.success(`Updated ${entries.length} existing entries`);
+    }
     
     const filtered = filterProjects(updatedProjects, metadata);
     setFilteredProjects(filtered);
@@ -121,7 +147,6 @@ const ProjectPortal = () => {
 
   const handleDriveConnect = (driveLink: string) => {
     console.log('Connected to Google Drive:', driveLink);
-    setDriveConnected(true);
     toast.success('Successfully connected to Google Drive');
   };
 

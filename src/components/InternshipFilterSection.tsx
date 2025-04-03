@@ -15,8 +15,8 @@ import { Filter } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 
 // Sample data for filters
-const years = ['4','3', '2', '1'];
 const semesters = ['8','7','6','5','4','3','2','1'];
+const programs = ['B.Tech', 'M.Tech', 'BCA', 'MCA', 'B.Sc', 'M.Sc'];
 
 interface FilterSectionProps {
   onFilterChange: (filters: Filter) => void;
@@ -45,6 +45,7 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
       year: '',
       semester: '',
       session: '',
+      program: '',
     };
     setFilters(resetFilters);
     onFilterChange(resetFilters);
@@ -95,16 +96,16 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
       >
         <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-1.5 mb-4">
-            <Label htmlFor="year">Year</Label>
-            <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
-              <SelectTrigger id="year">
-                <SelectValue placeholder="Select Year" />
+            <Label htmlFor="program">Program</Label>
+            <Select value={filters.program || ''} onValueChange={(value) => handleFilterChange('program', value)}>
+              <SelectTrigger id="program">
+                <SelectValue placeholder="Select Program" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-years">All Years</SelectItem>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
+                <SelectItem value="all-programs">All Programs</SelectItem>
+                {programs.map((program) => (
+                  <SelectItem key={program} value={program}>
+                    {program}
                   </SelectItem>
                 ))}
               </SelectContent>

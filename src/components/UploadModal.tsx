@@ -146,6 +146,40 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           rows: formattedRows,
           missingRequired: !hasRequiredFields
         });
+        
+        // Try to extract year from the data
+        const yearPattern = /20\d{2}[-/]20\d{2}/;
+        let yearValue = '';
+        
+        // Check if any header looks like a session year
+        for (const header of headers) {
+          if (header && yearPattern.test(header.toString())) {
+            yearValue = header.toString().match(yearPattern)?.[0] || '';
+            break;
+          }
+        }
+        
+        // If no year found in headers, check first few rows for session pattern
+        if (!yearValue) {
+          for (let i = 0; i < Math.min(3, rows.length); i++) {
+            for (const cell of rows[i]) {
+              if (cell && typeof cell === 'string' && yearPattern.test(cell)) {
+                yearValue = cell.match(yearPattern)?.[0] || '';
+                break;
+              }
+            }
+            if (yearValue) break;
+          }
+        }
+        
+        // Update session metadata if year was found
+        if (yearValue) {
+          setMetadata(prev => ({
+            ...prev,
+            session: yearValue
+          }));
+        }
+        
       } catch (error) {
         console.error('Error parsing Excel file:', error);
         toast.error('Failed to parse Excel file. Please check the format.');
@@ -186,6 +220,14 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     
     if (/program|course|degree|branch|stream/i.test(normalized)) {
       return 'program';
+    }
+    
+    if (/year[^s]/i.test(normalized)) {
+      return 'year';
+    }
+    
+    if (/session|academ|period|session/i.test(normalized)) {
+      return 'session';
     }
     
     if (/organization|company|org|internship|place|where/i.test(normalized)) {
@@ -258,7 +300,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       const entries = rows.map((row, rowIndex) => {
         const entry: Record<string, string> = {
           id: `upload-${Date.now()}-${rowIndex}`,
-          year: metadata.year,
+          year: '',  // Will try to extract from data
           semester: metadata.semester,
           session: metadata.session,
           rollNo: '',
@@ -275,6 +317,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           entry.facultyCoordinator = metadata.facultyCoordinator;
         }
         
+        // First, map data from the columns using our field mapping
         for (let colIndex = 0; colIndex < headers.length; colIndex++) {
           const fieldName = fieldMapping.get(colIndex);
           
@@ -284,6 +327,22 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           }
         }
         
+        // Try to extract year from row data if not already set
+        if (!entry.year) {
+          // Look in known year columns first
+          const yearCol = headers.findIndex(h => 
+            h && String(h).toLowerCase().includes('year')
+          );
+          
+          if (yearCol !== -1 && row[yearCol]) {
+            entry.year = String(row[yearCol]);
+          } else {
+            // Set default year from metadata
+            entry.year = metadata.year;
+          }
+        }
+        
+        // If we still don't have roll number, try to infer it
         if (!entry.rollNo || entry.rollNo.trim() === '') {
           const potentialRollColumns = [1, 2, 3];
           for (const col of potentialRollColumns) {
@@ -298,6 +357,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           }
         }
         
+        // If we still don't have name, try to infer it
         if (!entry.name || entry.name.trim() === '') {
           const potentialNameColumns = [2, 3, 4];
           for (const col of potentialNameColumns) {
@@ -312,6 +372,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           }
         }
         
+        // Set defaults if still missing
         if (!entry.rollNo || entry.rollNo.trim() === '') {
           entry.rollNo = `R${rowIndex + 1000}`;
           console.log(`Generated default rollNo = ${entry.rollNo}`);
@@ -514,13 +575,14 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
               <div className="space-y-1.5">
                 <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
                 <Select
-                  value={metadata.facultyCoordinator}
+                  value={metadata.facultyCoordinator || ''}
                   onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}
                 >
                   <SelectTrigger id="facultyCoordinator">
                     <SelectValue placeholder="Select Coordinator" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all-coordinators">All Coordinators</SelectItem>
                     <SelectItem value="Dr. Pankaj">Dr. Pankaj</SelectItem>
                     <SelectItem value="Dr. Meenu">Dr. Meenu</SelectItem>
                     <SelectItem value="Dr. Swati">Dr. Swati</SelectItem>
