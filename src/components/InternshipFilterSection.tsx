@@ -12,22 +12,26 @@ import {
 } from '@/components/ui/select';
 import { FilterIcon, RefreshCw } from 'lucide-react';
 import { Filter } from '@/lib/types';
+import { Input } from '@/components/ui/input';
 
 // Sample data for filters
 const years = ['4','3', '2', '1'];
 const semesters = ['8','7','6','5','4','3','2','1'];
-const courses = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
 
 interface FilterSectionProps {
   onFilterChange: (filters: Filter) => void;
+  availableSessions?: string[];
 }
 
-const InternshipFilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
+const InternshipFilterSection: React.FC<FilterSectionProps> = ({ 
+  onFilterChange, 
+  availableSessions = [] 
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState<Filter>({
     year: '',
     semester: '',
-    course: '',
+    session: '',
   });
 
   const handleFilterChange = (key: keyof Filter, value: string) => {
@@ -40,7 +44,7 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({ onFilterChange 
     const resetFilters = {
       year: '',
       semester: '',
-      course: '',
+      session: '',
     };
     setFilters(resetFilters);
     onFilterChange(resetFilters);
@@ -49,6 +53,11 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({ onFilterChange 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
+
+  // Get unique sessions for dropdown
+  const uniqueSessions = availableSessions.length > 0 
+    ? ['all-sessions', ...new Set(availableSessions)]
+    : ['all-sessions', '2022-2023', '2023-2024', '2024-2025', '2025-2026'];
 
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -120,17 +129,19 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({ onFilterChange 
           </div>
 
           <div className="space-y-1.5 mb-4">
-            <Label htmlFor="course">Program</Label>
-            <Select value={filters.course} onValueChange={(value) => handleFilterChange('course', value)}>
-              <SelectTrigger id="course">
-                <SelectValue placeholder="Select Program" />
+            <Label htmlFor="session">Session</Label>
+            <Select value={filters.session} onValueChange={(value) => handleFilterChange('session', value)}>
+              <SelectTrigger id="session">
+                <SelectValue placeholder="Select Session" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-courses">All Programs</SelectItem>
-                {courses.map((course) => (
-                  <SelectItem key={course} value={course}>
-                    {course}
-                  </SelectItem>
+                <SelectItem value="all-sessions">All Sessions</SelectItem>
+                {uniqueSessions.map((session) => (
+                  session !== 'all-sessions' && (
+                    <SelectItem key={session} value={session}>
+                      {session}
+                    </SelectItem>
+                  )
                 ))}
               </SelectContent>
             </Select>

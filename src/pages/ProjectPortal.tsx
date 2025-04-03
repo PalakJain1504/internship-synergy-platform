@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -23,11 +24,12 @@ const ProjectPortal = () => {
   const [currentFilters, setCurrentFilters] = useState<Filter>({
     year: '',
     semester: '',
-    course: '',
+    session: '',
     facultyCoordinator: '',
   });
   const [pageSize, setPageSize] = useState(50);
   const [driveConnected, setDriveConnected] = useState(false);
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -35,8 +37,22 @@ const ProjectPortal = () => {
     }
 
     const sampleData = generateSampleProjects(70);
-    setAllProjects(sampleData);
-    setFilteredProjects(sampleData);
+    
+    // Add session field to sample data
+    const withSessionData = sampleData.map(item => ({
+      ...item,
+      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024'
+    }));
+    
+    // Extract available sessions
+    const sessions = new Set<string>();
+    withSessionData.forEach(item => {
+      if (item.session) sessions.add(item.session);
+    });
+    
+    setAvailableSessions(Array.from(sessions));
+    setAllProjects(withSessionData);
+    setFilteredProjects(withSessionData);
     
     setTimeout(() => setIsLoaded(true), 500);
   }, [isAuthenticated, navigate]);
@@ -62,10 +78,29 @@ const ProjectPortal = () => {
       }
     });
     
+    // Update available sessions
+    const sessions = new Set<string>(availableSessions);
+    newData.forEach(item => {
+      if (item.session && !sessions.has(item.session)) {
+        sessions.add(item.session);
+      }
+    });
+    
+    setAvailableSessions(Array.from(sessions));
     setAllProjects(updatedAllProjects);
   };
 
   const handleUpload = (entries: ProjectData[], metadata: Filter) => {
+    // Update available sessions
+    const sessions = new Set<string>(availableSessions);
+    entries.forEach(item => {
+      if (item.session && !sessions.has(item.session)) {
+        sessions.add(item.session);
+      }
+    });
+    
+    setAvailableSessions(Array.from(sessions));
+    
     const updatedProjects = [...allProjects, ...entries];
     
     setAllProjects(updatedProjects);
@@ -166,7 +201,10 @@ const ProjectPortal = () => {
           </motion.div>
           
           <motion.div variants={itemVariants} className="mb-8">
-            <FilterSection onFilterChange={handleFilterChange} />
+            <FilterSection 
+              onFilterChange={handleFilterChange}
+              availableSessions={availableSessions} 
+            />
           </motion.div>
           
           <motion.div variants={itemVariants} className="mb-8">

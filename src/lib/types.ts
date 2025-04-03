@@ -20,7 +20,7 @@ export interface ProjectData {
   report: string;
   year: string;
   semester: string;
-  course: string;
+  session: string;
   facultyCoordinator: string;
   isEditing?: boolean;
   isNew?: boolean;
@@ -39,7 +39,7 @@ export interface InternshipData {
   pop: string;
   year: string;
   semester: string;
-  course: string;
+  session: string;
   isEditing?: boolean;
   isNew?: boolean;
   [key: string]: string | boolean | undefined; // Update for dynamic attendance columns
@@ -48,7 +48,7 @@ export interface InternshipData {
 export interface Filter {
   year: string;
   semester: string;
-  course: string;
+  session: string;
   facultyCoordinator?: string;
 }
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -23,11 +24,12 @@ const InternshipPortal = () => {
   const [currentFilters, setCurrentFilters] = useState<Filter>({
     year: '',
     semester: '',
-    course: '',
+    session: '',
   });
   const [pageSize, setPageSize] = useState(50);
   const [driveConnected, setDriveConnected] = useState(false);
   const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -36,18 +38,31 @@ const InternshipPortal = () => {
 
     const sampleData = generateSampleInternships(40);
     
+    // Add session field to sample data
+    const withSessionData = sampleData.map(item => ({
+      ...item,
+      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024'
+    }));
+    
     const extraColumns = new Set<string>();
-    sampleData.forEach(item => {
+    withSessionData.forEach(item => {
       Object.keys(item).forEach(key => {
-        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "course"].includes(key)) {
+        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session"].includes(key)) {
           extraColumns.add(key);
         }
       });
     });
     
+    // Extract available sessions
+    const sessions = new Set<string>();
+    withSessionData.forEach(item => {
+      if (item.session) sessions.add(item.session);
+    });
+    
+    setAvailableSessions(Array.from(sessions));
     setDynamicColumns(Array.from(extraColumns));
-    setAllInternships(sampleData);
-    setFilteredInternships(sampleData);
+    setAllInternships(withSessionData);
+    setFilteredInternships(withSessionData);
     
     setTimeout(() => setIsLoaded(true), 500);
   }, [isAuthenticated, navigate]);
@@ -73,6 +88,15 @@ const InternshipPortal = () => {
       }
     });
     
+    // Update available sessions
+    const sessions = new Set<string>(availableSessions);
+    newData.forEach(item => {
+      if (item.session && !sessions.has(item.session)) {
+        sessions.add(item.session);
+      }
+    });
+    
+    setAvailableSessions(Array.from(sessions));
     setAllInternships(updatedAllInternships);
   };
 
@@ -82,7 +106,7 @@ const InternshipPortal = () => {
     
     entries.forEach(entry => {
       Object.keys(entry).forEach(key => {
-        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "course", "isEditing", "isNew"].includes(key) && 
+        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session", "isEditing", "isNew"].includes(key) && 
             !dynamicColumns.includes(key)) {
           newDynamicColumns.add(key);
         }
@@ -93,6 +117,16 @@ const InternshipPortal = () => {
     if (newDynamicColumns.size > dynamicColumns.length) {
       setDynamicColumns(Array.from(newDynamicColumns));
     }
+    
+    // Update available sessions
+    const sessions = new Set<string>(availableSessions);
+    entries.forEach(item => {
+      if (item.session && !sessions.has(item.session)) {
+        sessions.add(item.session);
+      }
+    });
+    
+    setAvailableSessions(Array.from(sessions));
     
     const updatedInternships = [...allInternships, ...entries];
     
@@ -148,26 +182,6 @@ const InternshipPortal = () => {
     );
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-        staggerChildren: 0.1
-      }
-    }
-  };
-  
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar title="Progress Port" />
@@ -208,7 +222,10 @@ const InternshipPortal = () => {
           </motion.div>
           
           <motion.div className="mb-8">
-            <InternshipFilterSection onFilterChange={handleFilterChange} />
+            <InternshipFilterSection 
+              onFilterChange={handleFilterChange} 
+              availableSessions={availableSessions}
+            />
           </motion.div>
           
           <motion.div className="mb-8">

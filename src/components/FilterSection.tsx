@@ -10,30 +10,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { FilterIcon, RefreshCw, Search } from 'lucide-react';
+import { FilterIcon, RefreshCw } from 'lucide-react';
 import { Filter } from '@/lib/types';
 
 // Sample data for filters
 const years = ['4','3', '2', '1'];
 const semesters = ['8','7','6','5','4','3','2','1'];
-const courses = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
-const facultyCoordinators = [
-  'Dr. Pankaj', 
-  'Dr. Meenu', 
-  'Dr. Swati', 
-  'Dr. Anshu'
-];
+const facultyCoordinators = ['Dr. Pankaj', 'Dr. Meenu', 'Dr. Swati', 'Dr. Anshu'];
 
 interface FilterSectionProps {
   onFilterChange: (filters: Filter) => void;
+  availableSessions?: string[];
 }
 
-const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
+const FilterSection: React.FC<FilterSectionProps> = ({ 
+  onFilterChange,
+  availableSessions = []
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState<Filter>({
     year: '',
     semester: '',
-    course: '',
+    session: '',
     facultyCoordinator: '',
   });
 
@@ -47,7 +45,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
     const resetFilters = {
       year: '',
       semester: '',
-      course: '',
+      session: '',
       facultyCoordinator: '',
     };
     setFilters(resetFilters);
@@ -57,6 +55,11 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
+
+  // Get unique sessions for dropdown
+  const uniqueSessions = availableSessions.length > 0 
+    ? ['all-sessions', ...new Set(availableSessions)]
+    : ['all-sessions', '2022-2023', '2023-2024', '2024-2025', '2025-2026'];
 
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -92,15 +95,15 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
         transition={{ duration: 0.3 }}
         className="overflow-hidden"
       >
-        <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-1.5 mb-4">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-1.5">
             <Label htmlFor="year">Year</Label>
             <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
               <SelectTrigger id="year">
                 <SelectValue placeholder="Select Year" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-years">All Years</SelectItem>
+                <SelectItem value="">All Years</SelectItem>
                 {years.map((year) => (
                   <SelectItem key={year} value={year}>
                     {year}
@@ -110,14 +113,14 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
             </Select>
           </div>
 
-          <div className="space-y-1.5 mb-4">
+          <div className="space-y-1.5">
             <Label htmlFor="semester">Semester</Label>
             <Select value={filters.semester} onValueChange={(value) => handleFilterChange('semester', value)}>
               <SelectTrigger id="semester">
                 <SelectValue placeholder="Select Semester" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-semesters">All Semesters</SelectItem>
+                <SelectItem value="">All Semesters</SelectItem>
                 {semesters.map((semester) => (
                   <SelectItem key={semester} value={semester}>
                     {semester}
@@ -127,34 +130,33 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
             </Select>
           </div>
 
-          <div className="space-y-1.5 mb-4">
-            <Label htmlFor="course">Course</Label>
-            <Select value={filters.course} onValueChange={(value) => handleFilterChange('course', value)}>
-              <SelectTrigger id="course">
-                <SelectValue placeholder="Select Course" />
+          <div className="space-y-1.5">
+            <Label htmlFor="session">Session</Label>
+            <Select value={filters.session} onValueChange={(value) => handleFilterChange('session', value)}>
+              <SelectTrigger id="session">
+                <SelectValue placeholder="Select Session" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-courses">All Courses</SelectItem>
-                {courses.map((course) => (
-                  <SelectItem key={course} value={course}>
-                    {course}
-                  </SelectItem>
+                <SelectItem value="">All Sessions</SelectItem>
+                {uniqueSessions.map((session) => (
+                  session !== 'all-sessions' && (
+                    <SelectItem key={session} value={session}>
+                      {session}
+                    </SelectItem>
+                  )
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-1.5 mb-4">
+          <div className="space-y-1.5">
             <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
-            <Select
-              value={filters.facultyCoordinator}
-              onValueChange={(value) => handleFilterChange('facultyCoordinator', value)}
-            >
+            <Select value={filters.facultyCoordinator || ''} onValueChange={(value) => handleFilterChange('facultyCoordinator', value)}>
               <SelectTrigger id="facultyCoordinator">
                 <SelectValue placeholder="Select Coordinator" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-coordinators">All Coordinators</SelectItem>
+                <SelectItem value="">All Coordinators</SelectItem>
                 {facultyCoordinators.map((coordinator) => (
                   <SelectItem key={coordinator} value={coordinator}>
                     {coordinator}

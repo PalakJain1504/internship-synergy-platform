@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
   const [metadata, setMetadata] = useState<Filter>({
     year: '',
     semester: '',
-    course: '',
+    session: '',
     facultyCoordinator: '',
   });
   const [isUploading, setIsUploading] = useState(false);
@@ -95,7 +96,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       const patterns = [
         'roll', 'enrollment', 'rollno', 'rollnumber', 'rno', 'roll no', 'roll number',
         'enroll', 'enrollno', 'enrolment', 'registration', 'regno', 'registration no',
-        'registration number', 'id'
+        'registration number', 'id', 's.no', 'sno', 'serial'
       ];
       return patterns.some(pattern => h.includes(pattern));
     });
@@ -108,7 +109,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     });
     
     console.log(`Has Roll Number: ${hasRollNumber}, Has Name: ${hasName}`);
-    return hasRollNumber && hasName;
+    
+    // Return true even if missing - we'll generate defaults
+    return true;
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,8 +230,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       return;
     }
     
-    if (!metadata.year || !metadata.semester || !metadata.course) {
-      toast.error('Please fill in all required metadata fields (year, semester, course)');
+    if (!metadata.year || !metadata.semester || !metadata.session) {
+      toast.error('Please fill in all required metadata fields (year, semester, session)');
       return;
     }
 
@@ -257,7 +260,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           id: `upload-${Date.now()}-${rowIndex}`,
           year: metadata.year,
           semester: metadata.semester,
-          course: metadata.course,
+          session: metadata.session,
           rollNo: '',
           name: '',
           program: '',
@@ -397,8 +400,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Missing Required Fields</AlertTitle>
                   <AlertDescription>
-                    Your Excel file has columns that couldn't be identified as Roll Number and Student Name.
-                    The system will attempt to map data using available columns, but please check the results carefully.
+                    The system will attempt to map data using available columns and generate any missing values.
+                    Please check the results carefully after upload.
                   </AlertDescription>
                 </Alert>
               )}
@@ -454,7 +457,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           )}
 
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-700">Internship Metadata</h3>
+            <h3 className="text-sm font-medium text-gray-700">Metadata</h3>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -498,27 +501,18 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="course">Course*</Label>
-                <Select
-                  value={metadata.course}
-                  onValueChange={(value) => handleMetadataChange('course', value)}
-                >
-                  <SelectTrigger id="course">
-                    <SelectValue placeholder="Select Course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BSc">BSc</SelectItem>
-                    <SelectItem value="BTech CSE">BTech CSE</SelectItem>
-                    <SelectItem value="BTech AI/ML">BTech AI/ML</SelectItem>
-                    <SelectItem value="BCA">BCA</SelectItem>
-                    <SelectItem value="BCA AI/DS">BCA AI/DS</SelectItem>
-                    <SelectItem value="MCA">MCA</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="session">Session*</Label>
+                <Input
+                  id="session"
+                  type="text"
+                  placeholder="e.g., 2024-2025"
+                  value={metadata.session}
+                  onChange={(e) => handleMetadataChange('session', e.target.value)}
+                />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="facultyCoordinator">Faculty Coordinator*</Label>
+                <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
                 <Select
                   value={metadata.facultyCoordinator}
                   onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}

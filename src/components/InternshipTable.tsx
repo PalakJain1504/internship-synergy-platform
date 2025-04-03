@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft,
@@ -125,7 +126,7 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       pop: '',
       year: '',
       semester: '',
-      course: '',
+      session: '',
       isEditing: true,
       isNew: true
     };
@@ -251,6 +252,7 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       { id: 'rollNo', label: 'Roll No.' },
       { id: 'name', label: 'Student Name' },
       { id: 'program', label: 'Program' },
+      { id: 'session', label: 'Session' },
       { id: 'organization', label: 'Organization' },
       { id: 'dates', label: 'Dates' },
       { id: 'noc', label: 'NOC' },
