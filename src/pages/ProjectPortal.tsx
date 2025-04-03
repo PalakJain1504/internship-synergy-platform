@@ -5,8 +5,6 @@ import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import FilterSection from '@/components/FilterSection';
 import Table from '@/components/Table';
-import FileUpload from '@/components/FileUpload';
-import UploadModal from '@/components/UploadModal';
 import FormCreator from '@/components/FormCreator';
 import FormLinkDialog from '@/components/FormLinkDialog';
 import { Button } from '@/components/ui/button';
@@ -15,6 +13,7 @@ import { Download, FileUp, FileText } from 'lucide-react';
 import { generateSampleProjects, filterProjects, exportTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Filter, ProjectData } from '@/lib/types';
+import UploadModal from '@/components/UploadModal';
 
 const ProjectPortal = () => {
   const navigate = useNavigate();
@@ -150,15 +149,6 @@ const ProjectPortal = () => {
     toast.success('PDF exported successfully');
   };
 
-  const handleDriveConnect = (driveLink: string) => {
-    console.log('Connected to Google Drive:', driveLink);
-    toast.success('Successfully connected to Google Drive');
-  };
-
-  const handleAddColumn = (columnName: string) => {
-    toast.success(`Added new column: ${columnName}`);
-  };
-
   const handleFormCreated = (formSettings: any, formUrl: string) => {
     // Generate embed code - in a real application, this would come from the Google Forms API
     const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="1000" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
@@ -256,14 +246,6 @@ const ProjectPortal = () => {
             <FilterSection 
               onFilterChange={handleFilterChange}
               availableSessions={availableSessions} 
-            />
-          </motion.div>
-          
-          <motion.div variants={itemVariants} className="mb-8">
-            <FileUpload 
-              onUploadComplete={handleDriveConnect} 
-              portalType="project"
-              onAddColumn={handleAddColumn}
             />
           </motion.div>
           
