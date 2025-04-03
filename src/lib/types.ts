@@ -56,3 +56,23 @@ export interface Filter {
 // Removing redundant interfaces since they're now identical to the base interfaces
 export type ProjectEntry = ProjectData;
 export type InternshipEntry = InternshipData;
+
+// Define Form submission settings types
+export interface FormSettings {
+  portalType: 'project' | 'internship';
+  title: string;
+  session: string;
+  year: string;
+  semester: string;
+  program?: string;
+  includeFields: string[];
+  pdfFields: string[];
+  customFields: string[];
+}
+
+export interface FormSubmission {
+  formId: string;
+  timestamp: string;
+  data: Record<string, string>;
+  files: Record<string, string>;
+}

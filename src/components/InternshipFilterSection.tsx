@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/select';
 import { FilterIcon, RefreshCw } from 'lucide-react';
 import { Filter } from '@/lib/types';
-import { Input } from '@/components/ui/input';
 
 // Sample data for filters
 const semesters = ['8','7','6','5','4','3','2','1'];
@@ -32,6 +31,7 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
     year: '',
     semester: '',
     session: '',
+    program: '',
   });
 
   const handleFilterChange = (key: keyof Filter, value: string) => {
@@ -94,7 +94,7 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
         transition={{ duration: 0.3 }}
         className="overflow-hidden"
       >
-        <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5 mb-4">
             <Label htmlFor="program">Program</Label>
             <Select value={filters.program || ''} onValueChange={(value) => handleFilterChange('program', value)}>

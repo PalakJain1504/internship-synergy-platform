@@ -7,9 +7,11 @@ import FilterSection from '@/components/FilterSection';
 import Table from '@/components/Table';
 import FileUpload from '@/components/FileUpload';
 import UploadModal from '@/components/UploadModal';
+import FormCreator from '@/components/FormCreator';
+import FormLinkDialog from '@/components/FormLinkDialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Download, FileUp } from 'lucide-react';
+import { Download, FileUp, FileText } from 'lucide-react';
 import { generateSampleProjects, filterProjects, exportTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Filter, ProjectData } from '@/lib/types';
@@ -19,6 +21,9 @@ const ProjectPortal = () => {
   const { isAuthenticated, user } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isFormCreatorOpen, setIsFormCreatorOpen] = useState(false);
+  const [isFormLinkDialogOpen, setIsFormLinkDialogOpen] = useState(false);
+  const [formDetails, setFormDetails] = useState({ title: '', url: '', embedCode: '' });
   const [allProjects, setAllProjects] = useState<ProjectData[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<ProjectData[]>([]);
   const [currentFilters, setCurrentFilters] = useState<Filter>({
@@ -154,6 +159,19 @@ const ProjectPortal = () => {
     toast.success(`Added new column: ${columnName}`);
   };
 
+  const handleFormCreated = (formSettings: any, formUrl: string) => {
+    // Generate embed code - in a real application, this would come from the Google Forms API
+    const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="1000" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
+    
+    setFormDetails({
+      title: formSettings.title,
+      url: formUrl,
+      embedCode
+    });
+
+    setIsFormLinkDialogOpen(true);
+  };
+
   if (!isAuthenticated || !isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -205,6 +223,15 @@ const ProjectPortal = () => {
             </div>
             
             <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+              <Button
+                variant="outline"
+                onClick={() => setIsFormCreatorOpen(true)}
+                className="bg-white text-gray-700 border-gray-200"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Create Form
+              </Button>
+              
               <Button
                 variant="outline"
                 onClick={handleExportPDF}
@@ -259,6 +286,21 @@ const ProjectPortal = () => {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onUpload={(entries, metadata) => handleUpload(entries as ProjectData[], metadata)}
+      />
+
+      <FormCreator
+        isOpen={isFormCreatorOpen}
+        onClose={() => setIsFormCreatorOpen(false)}
+        portalType="project"
+        onFormCreated={handleFormCreated}
+      />
+      
+      <FormLinkDialog
+        isOpen={isFormLinkDialogOpen}
+        onClose={() => setIsFormLinkDialogOpen(false)}
+        formTitle={formDetails.title}
+        formUrl={formDetails.url}
+        embedCode={formDetails.embedCode}
       />
     </div>
   );

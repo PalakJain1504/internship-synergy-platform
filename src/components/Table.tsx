@@ -12,7 +12,6 @@ import {
   Trash2,
   FileText,
   Upload,
-  Download,
   ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,32 +25,11 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-
-export interface ProjectEntry {
-  id: string;
-  groupNo: string;
-  rollNo: string;
-  name: string;
-  email: string;
-  phoneNo: string;
-  title: string;
-  domain: string;
-  facultyMentor: string;
-  industryMentor: string;
-  form: string;
-  presentation: string;
-  report: string;
-  year: string;
-  semester: string;
-  course: string;
-  facultyCoordinator: string;
-  isEditing?: boolean;
-  isNew?: boolean;
-}
+import { ProjectData } from '@/lib/types';
 
 interface TableProps {
-  data: ProjectEntry[];
-  onDataChange: (newData: ProjectEntry[]) => void;
+  data: ProjectData[];
+  onDataChange: (newData: ProjectData[]) => void;
   pageSize: number;
   onPageSizeChange: (size: number) => void;
 }
@@ -64,17 +42,22 @@ const Table: React.FC<TableProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingRow, setEditingRow] = useState<string | null>(null);
-  const [editedData, setEditedData] = useState<ProjectEntry | null>(null);
+  const [editedData, setEditedData] = useState<ProjectData | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeFileField, setActiveFileField] = useState<{id: string, field: string} | null>(null);
   
   // Group data by groupNo for display
   const groupedData = React.useMemo(() => {
     // First, sort by groupNo to ensure groups are together
-    const sortedData = [...data].sort((a, b) => a.groupNo.localeCompare(b.groupNo));
+    const sortedData = [...data].sort((a, b) => {
+      // Handle undefined or empty groupNo safely
+      const groupA = a.groupNo || '';
+      const groupB = b.groupNo || '';
+      return groupA.localeCompare(groupB);
+    });
     
     const groups: Record<string, {
-      entries: ProjectEntry[],
+      entries: ProjectData[],
       groupFields: {
         groupNo: string,
         title: string,
@@ -85,19 +68,20 @@ const Table: React.FC<TableProps> = ({
     }> = {};
     
     sortedData.forEach(entry => {
-      if (!groups[entry.groupNo]) {
-        groups[entry.groupNo] = {
+      const groupKey = entry.groupNo || 'ungrouped';
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
           entries: [],
           groupFields: {
-            groupNo: entry.groupNo,
-            title: entry.title,
-            domain: entry.domain,
-            facultyMentor: entry.facultyMentor,
-            industryMentor: entry.industryMentor
+            groupNo: entry.groupNo || '',
+            title: entry.title || '',
+            domain: entry.domain || '',
+            facultyMentor: entry.facultyMentor || '',
+            industryMentor: entry.industryMentor || ''
           }
         };
       }
-      groups[entry.groupNo].entries.push(entry);
+      groups[groupKey].entries.push(entry);
     });
     
     return Object.values(groups);
@@ -165,7 +149,7 @@ const Table: React.FC<TableProps> = ({
     toast.success('Row deleted successfully!');
   };
 
-  // Add a new row
+  // Add a new row - modified to add at the end
   const addNewRow = () => {
     if (editingRow) {
       toast.error('Please save or cancel the current edit first.');
@@ -173,7 +157,7 @@ const Table: React.FC<TableProps> = ({
     }
     
     const newId = `new-${Date.now()}`;
-    const newRow: ProjectEntry = {
+    const newRow: ProjectData = {
       id: newId,
       groupNo: '',
       rollNo: '',
@@ -189,7 +173,7 @@ const Table: React.FC<TableProps> = ({
       report: '',
       year: '',
       semester: '',
-      course: '',
+      session: '',
       facultyCoordinator: '',
       isEditing: true,
       isNew: true,
@@ -205,12 +189,17 @@ const Table: React.FC<TableProps> = ({
       if (tableContainer) {
         tableContainer.scrollTop = tableContainer.scrollHeight;
       }
+      
+      // Set pagination to last page to show the new row
+      if (totalPages > 0) {
+        setCurrentPage(totalPages);
+      }
     }, 100);
   };
 
   // Handle input change in editable cells
   const handleInputChange = (
-    field: keyof ProjectEntry,
+    field: keyof ProjectData,
     value: string
   ) => {
     if (!editedData) return;
@@ -246,19 +235,8 @@ const Table: React.FC<TableProps> = ({
     setActiveFileField(null);
   };
 
-  // Handle Drive link
-  const handleDriveLink = (id: string, field: 'form' | 'presentation' | 'report') => {
-    // This would be integrated with the Drive link functionality
-    if (!editedData) return;
-    
-    const fileName = `${editedData.groupNo}_${editedData.rollNo}_${field}_drive.pdf`;
-    setEditedData({ ...editedData, [field]: fileName });
-    
-    toast.success(`Added from Drive: ${fileName}`);
-  };
-
   // Render a table cell based on whether it's being edited
-  const renderCell = (row: ProjectEntry, field: keyof ProjectEntry, isFirstInGroup: boolean = false) => {
+  const renderCell = (row: ProjectData, field: keyof ProjectData, isFirstInGroup: boolean = false) => {
     const isEditing = row.id === editingRow;
     
     // For grouped fields, only show on the first row of the group
@@ -286,40 +264,15 @@ const Table: React.FC<TableProps> = ({
                 </Button>
               </div>
             ) : (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs w-full"
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    Upload File
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-48 p-2">
-                  <div className="flex flex-col space-y-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="text-xs justify-start"
-                      onClick={() => triggerFileInput(row.id, field as 'form' | 'presentation' | 'report')}
-                    >
-                      <Upload className="h-3 w-3 mr-2" />
-                      From Computer
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      className="text-xs justify-start"
-                      onClick={() => handleDriveLink(row.id, field as 'form' | 'presentation' | 'report')}
-                    >
-                      <ExternalLink className="h-3 w-3 mr-2" />
-                      From Drive
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs w-full"
+                onClick={() => triggerFileInput(row.id, field as 'form' | 'presentation' | 'report')}
+              >
+                <Upload className="h-3 w-3 mr-1" />
+                Upload File
+              </Button>
             )}
           </div>
         );
@@ -378,6 +331,8 @@ const Table: React.FC<TableProps> = ({
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Form</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Presentation</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Report</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Year</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Session</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
             </tr>
           </thead>
@@ -411,6 +366,8 @@ const Table: React.FC<TableProps> = ({
                     <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'form')}</td>
                     <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'presentation')}</td>
                     <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'report')}</td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'year')}</td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">{renderCell(row, 'session')}</td>
                     <td className="px-4 py-2 text-sm whitespace-nowrap">
                       {row.id === editingRow ? (
                         <div className="flex items-center space-x-1">
@@ -476,7 +433,7 @@ const Table: React.FC<TableProps> = ({
               ))
             ) : (
               <tr>
-                <td colSpan={13} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={15} className="px-4 py-8 text-center text-gray-500">
                   No data available. Add a new entry or upload an Excel sheet to get started.
                 </td>
               </tr>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft,
@@ -138,10 +139,16 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
     setEditingRow(newId);
     setEditedData(newRow);
     
+    // Auto-scroll to the bottom of the table
     setTimeout(() => {
       const tableContainer = document.querySelector('.table-container');
       if (tableContainer) {
         tableContainer.scrollTop = tableContainer.scrollHeight;
+      }
+      
+      // Set pagination to last page to show the new row
+      if (totalPages > 0) {
+        setCurrentPage(totalPages);
       }
     }, 100);
   };
@@ -260,20 +267,21 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       { id: 'pop', label: 'PoP' },
     ];
     
-    const filteredDynamicColumns = dynamicColumns.filter(col => {
-      if (col.startsWith('Attendance')) {
-        const month = col.replace('Attendance ', '').toLowerCase();
-        return month !== 'may' && month !== 'june';
-      }
-      return true;
-    });
+    // Only include attendance columns that are in dynamicColumns
+    const attendanceColumns = dynamicColumns
+      .filter(col => col.startsWith('Attendance'))
+      .map(col => ({ id: col, label: col }));
     
-    const withDynamicColumns = [
+    // Include other dynamic columns that are not attendance columns
+    const otherDynamicColumns = dynamicColumns
+      .filter(col => !col.startsWith('Attendance'))
+      .map(col => ({ id: col, label: col }));
+    
+    return [
       ...baseColumns,
-      ...filteredDynamicColumns.map(col => ({ id: col, label: col }))
+      ...attendanceColumns,
+      ...otherDynamicColumns
     ];
-    
-    return withDynamicColumns;
   };
 
   const columns = getAllColumns();
