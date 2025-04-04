@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -10,163 +9,188 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { FilterIcon, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Filter } from '@/lib/types';
 
-// Sample data for filters
-const years = ['4','3', '2', '1'];
-const semesters = ['8','7','6','5','4','3','2','1'];
-const facultyCoordinators = ['Dr. Pankaj', 'Dr. Meenu', 'Dr. Swati', 'Dr. Anshu'];
-
-interface FilterSectionProps {
+export interface FilterSectionProps {
   onFilterChange: (filters: Filter) => void;
-  availableSessions?: string[];
+  availableSessions: string[];
+  availablePrograms: string[];
 }
 
 const FilterSection: React.FC<FilterSectionProps> = ({ 
-  onFilterChange,
-  availableSessions = []
+  onFilterChange, 
+  availableSessions,
+  availablePrograms
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [filters, setFilters] = useState<Filter>({
-    year: '',
-    semester: '',
-    session: '',
-    facultyCoordinator: '',
-  });
+  const [year, setYear] = useState<string>('');
+  const [semester, setSemester] = useState<string>('');
+  const [session, setSession] = useState<string>('');
+  const [facultyCoordinator, setFacultyCoordinator] = useState<string>('');
+  const [program, setProgram] = useState<string>('');
+  const [searchText, setSearchText] = useState<string>('');
+  const [availableSemesters, setAvailableSemesters] = useState<string[]>(['1', '2', '3', '4', '5', '6', '7', '8']);
 
-  const handleFilterChange = (key: keyof Filter, value: string) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+  // Mapping for year to semesters
+  const yearToSemesterMap: Record<string, string[]> = {
+    '1': ['1', '2'],
+    '2': ['3', '4'],
+    '3': ['5', '6'],
+    '4': ['7', '8']
   };
 
-  const handleResetFilters = () => {
-    const resetFilters = {
-      year: '',
-      semester: '',
-      session: '',
-      facultyCoordinator: '',
+  // Update available semesters when year changes
+  useEffect(() => {
+    if (year) {
+      setAvailableSemesters(yearToSemesterMap[year] || []);
+      // If current selected semester is not in the available semesters, reset it
+      if (semester && !yearToSemesterMap[year]?.includes(semester)) {
+        setSemester('');
+      }
+    } else {
+      setAvailableSemesters(['1', '2', '3', '4', '5', '6', '7', '8']);
+    }
+  }, [year, semester]);
+
+  useEffect(() => {
+    // Apply filters immediately when they change
+    const filters: Filter = {
+      year,
+      semester,
+      session,
+      facultyCoordinator,
+      program
     };
-    setFilters(resetFilters);
-    onFilterChange(resetFilters);
-  };
+    
+    onFilterChange(filters);
+  }, [year, semester, session, facultyCoordinator, program, onFilterChange]);
 
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
+  const clearFilters = () => {
+    setYear('');
+    setSemester('');
+    setSession('');
+    setFacultyCoordinator('');
+    setProgram('');
+    setSearchText('');
   };
-
-  // Get unique sessions for dropdown
-  const uniqueSessions = availableSessions.length > 0 
-    ? ['all-sessions', ...new Set(availableSessions)]
-    : ['all-sessions', '2022-2023', '2023-2024', '2024-2025', '2025-2026'];
 
   return (
-    <div className="w-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <div className="flex items-center">
-          <FilterIcon className="h-5 w-5 text-gray-500 mr-2" />
-          <h3 className="font-medium text-gray-900">Filters</h3>
+    <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="flex flex-wrap gap-3 items-end">
+        <div className="w-full md:w-auto flex-1 min-w-[200px]">
+          <label htmlFor="session" className="block text-sm font-medium text-gray-700 mb-1">
+            Session
+          </label>
+          <Select
+            value={session}
+            onValueChange={setSession}
+          >
+            <SelectTrigger className="w-full" id="session">
+              <SelectValue placeholder="All Sessions" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-sessions">All Sessions</SelectItem>
+              {availableSessions.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleResetFilters}
-            className="text-gray-500 hover:text-gray-700"
+
+        <div className="w-full md:w-auto flex-1 min-w-[150px]">
+          <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+            Year
+          </label>
+          <Select
+            value={year}
+            onValueChange={setYear}
           >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Reset
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleExpand}
-            className="text-gray-500 hover:text-gray-700"
+            <SelectTrigger className="w-full" id="year">
+              <SelectValue placeholder="All Years" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-years">All Years</SelectItem>
+              <SelectItem value="1">1</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-full md:w-auto flex-1 min-w-[150px]">
+          <label htmlFor="semester" className="block text-sm font-medium text-gray-700 mb-1">
+            Semester
+          </label>
+          <Select
+            value={semester}
+            onValueChange={setSemester}
           >
-            {isExpanded ? 'Collapse' : 'Expand'}
+            <SelectTrigger className="w-full" id="semester">
+              <SelectValue placeholder="All Semesters" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-semesters">All Semesters</SelectItem>
+              {availableSemesters.map((sem) => (
+                <SelectItem key={sem} value={sem}>{sem}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-full md:w-auto flex-1 min-w-[200px]">
+          <label htmlFor="program" className="block text-sm font-medium text-gray-700 mb-1">
+            Program
+          </label>
+          <Select
+            value={program}
+            onValueChange={setProgram}
+          >
+            <SelectTrigger className="w-full" id="program">
+              <SelectValue placeholder="All Programs" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-programs">All Programs</SelectItem>
+              {availablePrograms.map((p) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-full md:w-auto flex-1 min-w-[200px]">
+          <label htmlFor="faculty" className="block text-sm font-medium text-gray-700 mb-1">
+            Faculty Coordinator
+          </label>
+          <Select
+            value={facultyCoordinator}
+            onValueChange={setFacultyCoordinator}
+          >
+            <SelectTrigger className="w-full" id="faculty">
+              <SelectValue placeholder="All Coordinators" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-coordinators">All Coordinators</SelectItem>
+              <SelectItem value="Dr. Pankaj">Dr. Pankaj</SelectItem>
+              <SelectItem value="Dr. Meenu">Dr. Meenu</SelectItem>
+              <SelectItem value="Dr. Swati">Dr. Swati</SelectItem>
+              <SelectItem value="Dr. Anshu">Dr. Anshu</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2 mt-2 md:mt-0">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={clearFilters}
+            className="h-9 px-2.5"
+          >
+            <X className="mr-1 h-4 w-4" />
+            Clear
           </Button>
         </div>
       </div>
-
-      <motion.div
-        initial={{ height: 'auto' }}
-        animate={{ height: isExpanded ? 'auto' : '80px' }}
-        transition={{ duration: 0.3 }}
-        className="overflow-hidden"
-      >
-        <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="year">Year</Label>
-            <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
-              <SelectTrigger id="year">
-                <SelectValue placeholder="Select Year" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-years">All Years</SelectItem>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="semester">Semester</Label>
-            <Select value={filters.semester} onValueChange={(value) => handleFilterChange('semester', value)}>
-              <SelectTrigger id="semester">
-                <SelectValue placeholder="Select Semester" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-semesters">All Semesters</SelectItem>
-                {semesters.map((semester) => (
-                  <SelectItem key={semester} value={semester}>
-                    {semester}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="session">Session</Label>
-            <Select value={filters.session} onValueChange={(value) => handleFilterChange('session', value)}>
-              <SelectTrigger id="session">
-                <SelectValue placeholder="Select Session" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-sessions">All Sessions</SelectItem>
-                {uniqueSessions.map((session) => (
-                  session !== 'all-sessions' && (
-                    <SelectItem key={session} value={session}>
-                      {session}
-                    </SelectItem>
-                  )
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
-            <Select value={filters.facultyCoordinator || ''} onValueChange={(value) => handleFilterChange('facultyCoordinator', value)}>
-              <SelectTrigger id="facultyCoordinator">
-                <SelectValue placeholder="Select Coordinator" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-coordinators">All Coordinators</SelectItem>
-                {facultyCoordinators.map((coordinator) => (
-                  <SelectItem key={coordinator} value={coordinator}>
-                    {coordinator}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </motion.div>
     </div>
   );
 };

@@ -25,19 +25,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Plus, X, FileText, ClipboardCheck } from 'lucide-react';
-
-// Type for form settings
-interface FormSettings {
-  portalType: 'project' | 'internship';
-  title: string;
-  session: string;
-  year: string;
-  semester: string;
-  program?: string;
-  includeFields: string[];
-  pdfFields: string[];
-  customFields: string[];
-}
+import { FormSettings } from '@/lib/types';
 
 interface FormCreatorProps {
   isOpen: boolean;
@@ -89,6 +77,14 @@ const formSchema = z.object({
   year: z.string().min(1, "Year is required"),
   semester: z.string().min(1, "Semester is required"),
   program: z.string().optional(),
+  minStudents: z.union([
+    z.string(),
+    z.number()
+  ]).transform(val => Number(val)).optional(),
+  maxStudents: z.union([
+    z.string(), 
+    z.number()
+  ]).transform(val => Number(val)).optional(),
   newFieldName: z.string().optional(),
 });
 
@@ -107,6 +103,8 @@ const FormCreator: React.FC<FormCreatorProps> = ({
       year: '',
       semester: '',
       program: '',
+      minStudents: '1',
+      maxStudents: '4',
       newFieldName: '',
     },
   });
@@ -165,6 +163,19 @@ const FormCreator: React.FC<FormCreatorProps> = ({
       return;
     }
 
+    const minStudents = Number(values.minStudents) || 1;
+    const maxStudents = Number(values.maxStudents) || 4;
+
+    if (minStudents < 1) {
+      toast.error('Minimum students must be at least 1');
+      return;
+    }
+
+    if (maxStudents < minStudents) {
+      toast.error('Maximum students cannot be less than minimum students');
+      return;
+    }
+
     // Create form settings
     const formSettings: FormSettings = {
       portalType,
@@ -173,13 +184,15 @@ const FormCreator: React.FC<FormCreatorProps> = ({
       year: values.year,
       semester: values.semester,
       program: values.program,
+      minStudents,
+      maxStudents,
       includeFields: selectedFields,
       pdfFields: selectedPdfFields,
       customFields,
     };
 
     // Generate a mock Google Form URL (in a real scenario, this would call an API)
-    const formUrl = `https://docs.google.com/forms/d/${Date.now()}/viewform`;
+    const formUrl = `https://docs.google.com/forms/d/e/${Date.now()}/viewform`;
     
     // Notify success
     toast.success('Form created successfully!');
@@ -257,22 +270,66 @@ const FormCreator: React.FC<FormCreatorProps> = ({
                 )}
               />
               
-              {portalType === 'internship' && (
-                <FormField
-                  control={form.control}
-                  name="program"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Program</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., B.Tech" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+              <FormField
+                control={form.control}
+                name="program"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Program</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., BTech CSE" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
+            
+            {/* Group Size Section - Only for Project Portal */}
+            {portalType === 'project' && (
+              <div className="border rounded-md p-4 bg-gray-50">
+                <h3 className="text-base font-medium mb-3">Group Configuration</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="minStudents"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Minimum Students per Group</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            placeholder="e.g., 1" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="maxStudents"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Maximum Students per Group</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1"
+                            placeholder="e.g., 4" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
             
             {/* Field Selection Section */}
             <div>

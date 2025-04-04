@@ -39,6 +39,12 @@ const normalizeProgram = (program: string): string => {
   return normalized;
 };
 
+// Function to normalize course/program names (needed for file system paths)
+const normalizeCourse = (course: string): string => {
+  const normalized = course.toLowerCase().replace(/\s|\./g, '');
+  return normalized;
+};
+
 // Project data functions
 const projectToDbFormat = (project: ProjectData) => {
   const { isEditing, isNew, ...data } = project;
