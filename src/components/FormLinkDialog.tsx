@@ -11,9 +11,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Copy, ExternalLink } from 'lucide-react';
+import { Copy, ExternalLink, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
+import { useState } from 'react';
 
 interface FormLinkDialogProps {
   isOpen: boolean;
@@ -30,24 +31,48 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
   formUrl,
   embedCode,
 }) => {
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(formUrl);
-    toast.success('Link copied to clipboard');
+  const [copyLinkStatus, setCopyLinkStatus] = useState<'idle' | 'copied'>('idle');
+  const [copyEmbedStatus, setCopyEmbedStatus] = useState<'idle' | 'copied'>('idle');
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(formUrl);
+      setCopyLinkStatus('copied');
+      toast.success('Link copied to clipboard');
+      
+      // Reset after 2 seconds
+      setTimeout(() => setCopyLinkStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      toast.error('Failed to copy link. Please try manually selecting and copying.');
+    }
   };
 
-  const handleCopyEmbed = () => {
-    navigator.clipboard.writeText(embedCode);
-    toast.success('Embed code copied to clipboard');
+  const handleCopyEmbed = async () => {
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      setCopyEmbedStatus('copied');
+      toast.success('Embed code copied to clipboard');
+      
+      // Reset after 2 seconds
+      setTimeout(() => setCopyEmbedStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Failed to copy embed code:', error);
+      toast.error('Failed to copy embed code. Please try manually selecting and copying.');
+    }
   };
 
   const handleVisitForm = () => {
-    // In a real implementation, this would open an actual form
-    // For now, we'll just inform the user that this is a mock URL
-    toast.info('This is a sample form URL. In a production environment, this would open your actual form.');
-    
-    // Open in a new tab and ensure the URL has the proper format
+    // Ensure the URL has the proper format before opening
     const formattedUrl = formUrl.startsWith('http') ? formUrl : `https://${formUrl}`;
     window.open(formattedUrl, '_blank');
+  };
+
+  const handleEditForm = () => {
+    // Convert viewform URL to edit URL
+    const editUrl = formUrl.replace(/\/viewform$/, '/edit');
+    window.open(editUrl, '_blank');
+    toast.info('Opening form editor. You may need to sign in to your Google account.');
   };
 
   return (
@@ -71,10 +96,16 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
                 className="flex-1"
               />
               <Button variant="outline" size="icon" onClick={handleCopyLink}>
-                <Copy className="h-4 w-4" />
+                {copyLinkStatus === 'copied' ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">This is a mock form URL for demonstration purposes.</p>
+            <p className="text-xs text-muted-foreground">
+              Share this link with students to allow them to submit their information.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -87,19 +118,29 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
                 className="flex-1 h-24 font-mono text-xs"
               />
               <Button variant="outline" size="icon" onClick={handleCopyEmbed} className="self-start">
-                <Copy className="h-4 w-4" />
+                {copyEmbedStatus === 'copied' ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Copy this code to embed the form in your website or learning management system.
+            </p>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={onClose} className="sm:order-1">
             Close
           </Button>
-          <Button onClick={handleVisitForm}>
+          <Button onClick={handleVisitForm} className="sm:order-3">
             <ExternalLink className="h-4 w-4 mr-2" />
             Open Form
+          </Button>
+          <Button onClick={handleEditForm} variant="secondary" className="sm:order-2">
+            Edit Form
           </Button>
         </DialogFooter>
       </DialogContent>

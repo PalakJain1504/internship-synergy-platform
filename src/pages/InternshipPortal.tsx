@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -43,7 +42,6 @@ const InternshipPortal = () => {
 
     const sampleData = generateSampleInternships(40);
     
-    // Add session field and program to sample data
     const withSessionData = sampleData.map(item => ({
       ...item,
       session: Math.random() > 0.5 ? '2024-2025' : '2023-2024',
@@ -63,7 +61,6 @@ const InternshipPortal = () => {
       });
     });
     
-    // Extract available sessions and programs
     const sessions = new Set<string>();
     const programs = new Set<string>();
     
@@ -102,7 +99,6 @@ const InternshipPortal = () => {
       }
     });
     
-    // Update available sessions and programs
     const sessions = new Set<string>(availableSessions);
     const programs = new Set<string>(availablePrograms);
     
@@ -121,7 +117,6 @@ const InternshipPortal = () => {
   };
 
   const handleUpload = (entries: InternshipData[], metadata: Filter) => {
-    // Check for new dynamic columns in the uploaded data
     const newDynamicColumns = new Set<string>(dynamicColumns);
     
     entries.forEach(entry => {
@@ -136,12 +131,10 @@ const InternshipPortal = () => {
       });
     });
     
-    // Update dynamic columns if new ones were found
     if (newDynamicColumns.size > dynamicColumns.length) {
       setDynamicColumns(Array.from(newDynamicColumns));
     }
     
-    // Update available sessions and programs
     const sessions = new Set<string>(availableSessions);
     const programs = new Set<string>(availablePrograms);
     
@@ -157,7 +150,6 @@ const InternshipPortal = () => {
     setAvailableSessions(Array.from(sessions));
     setAvailablePrograms(Array.from(programs));
     
-    // Update internships data by matching on rollNo and program
     const updatedInternships = [...allInternships];
     let newEntries = 0;
     
@@ -167,14 +159,12 @@ const InternshipPortal = () => {
       );
       
       if (existingIndex >= 0) {
-        // Update existing entry
         updatedInternships[existingIndex] = {
           ...updatedInternships[existingIndex],
           ...entry,
-          id: updatedInternships[existingIndex].id // Keep original ID
+          id: updatedInternships[existingIndex].id
         };
       } else {
-        // Add new entry
         updatedInternships.push(entry);
         newEntries++;
       }
@@ -221,10 +211,7 @@ const InternshipPortal = () => {
     }
   };
 
-  const handleFormCreated = (formSettings: any, formUrl: string) => {
-    // Generate embed code - in a real application, this would come from the Google Forms API
-    const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="1000" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
-    
+  const handleFormCreated = (formSettings: any, formUrl: string, embedCode: string) => {
     setFormDetails({
       title: formSettings.title,
       url: formUrl,
@@ -232,6 +219,8 @@ const InternshipPortal = () => {
     });
 
     setIsFormLinkDialogOpen(true);
+    
+    console.log('Form created:', { formSettings, formUrl, embedCode });
   };
 
   if (!isAuthenticated || !isLoaded) {

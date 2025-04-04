@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -43,14 +42,12 @@ const ProjectPortal = () => {
 
     const sampleData = generateSampleProjects(70);
     
-    // Add session field to sample data
     const withSessionData = sampleData.map(item => ({
       ...item,
       session: Math.random() > 0.5 ? '2024-2025' : '2023-2024',
       program: ['BTech CSE', 'BTech CSE (FSD)', 'BTech CSE (UI/UX)', 'BTech AI/ML', 'BSc CS', 'BSc DS', 'BSc Cyber', 'BCA', 'BCA (AI/DS)'][Math.floor(Math.random() * 9)]
     }));
     
-    // Extract available sessions
     const sessions = new Set<string>();
     const programs = new Set<string>();
     
@@ -88,7 +85,6 @@ const ProjectPortal = () => {
       }
     });
     
-    // Update available sessions and programs
     const sessions = new Set<string>(availableSessions);
     const programs = new Set<string>(availablePrograms);
     
@@ -107,7 +103,6 @@ const ProjectPortal = () => {
   };
 
   const handleUpload = (entries: ProjectData[], metadata: Filter) => {
-    // Update available sessions and programs
     const sessions = new Set<string>(availableSessions);
     const programs = new Set<string>(availablePrograms);
     
@@ -123,7 +118,6 @@ const ProjectPortal = () => {
     setAvailableSessions(Array.from(sessions));
     setAvailablePrograms(Array.from(programs));
     
-    // Update projects data by matching on rollNo, groupNo, and name
     const updatedProjects = [...allProjects];
     let newEntries = 0;
     
@@ -133,14 +127,12 @@ const ProjectPortal = () => {
       );
       
       if (existingIndex >= 0) {
-        // Update existing entry
         updatedProjects[existingIndex] = {
           ...updatedProjects[existingIndex],
           ...entry,
-          id: updatedProjects[existingIndex].id // Keep original ID
+          id: updatedProjects[existingIndex].id
         };
       } else {
-        // Add new entry
         updatedProjects.push(entry);
         newEntries++;
       }
@@ -168,10 +160,7 @@ const ProjectPortal = () => {
     toast.success('PDF exported successfully');
   };
 
-  const handleFormCreated = (formSettings: any, formUrl: string) => {
-    // Generate embed code - in a real application, this would come from the Google Forms API
-    const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="1000" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
-    
+  const handleFormCreated = (formSettings: any, formUrl: string, embedCode: string) => {
     setFormDetails({
       title: formSettings.title,
       url: formUrl,
@@ -179,6 +168,8 @@ const ProjectPortal = () => {
     });
 
     setIsFormLinkDialogOpen(true);
+    
+    console.log('Form created:', { formSettings, formUrl, embedCode });
   };
 
   if (!isAuthenticated || !isLoaded) {

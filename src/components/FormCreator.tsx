@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -23,14 +24,15 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus, X, FileText, ClipboardCheck } from 'lucide-react';
+import { Plus, X, FileText, ClipboardCheck, Loader2 } from 'lucide-react';
 import { FormSettings } from '@/lib/types';
+import { createGoogleForm, addFormQuestions } from '@/services/googleFormsService';
 
 interface FormCreatorProps {
   isOpen: boolean;
   onClose: () => void;
   portalType: 'project' | 'internship';
-  onFormCreated: (formSettings: FormSettings, formUrl: string) => void;
+  onFormCreated: (formSettings: FormSettings, formUrl: string, embedCode: string) => void;
 }
 
 // Define base fields for each portal type
@@ -110,6 +112,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({
   const [selectedPdfFields, setSelectedPdfFields] = useState<string[]>(pdfFields);
   const [customFields, setCustomFields] = useState<string[]>([]);
   const [newCustomField, setNewCustomField] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Handle adding custom field
   const addCustomField = () => {
@@ -145,7 +148,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({
   };
 
   // Handle form submission
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (selectedFields.length === 0) {
       toast.error('Please select at least one field');
       return;
@@ -169,32 +172,49 @@ const FormCreator: React.FC<FormCreatorProps> = ({
       return;
     }
 
-    // Create form settings
-    const formSettings: FormSettings = {
-      portalType,
-      title: values.title,
-      session: values.session,
-      year: values.year,
-      semester: values.semester,
-      program: values.program,
-      minStudents,
-      maxStudents,
-      includeFields: selectedFields,
-      pdfFields: selectedPdfFields,
-      customFields,
-    };
+    setIsSubmitting(true);
 
-    // Generate a mock Google Form URL
-    const mockFormId = `e${Date.now()}`;
-    const formUrl = `https://docs.google.com/forms/d/e/${mockFormId}/viewform`;
-    
-    // Generate embed code for the form
-    const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="1000" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
-    
-    // Notify success
-    toast.success('Form created successfully!');
-    onFormCreated(formSettings, formUrl);
-    onClose();
+    try {
+      // Create form settings
+      const formSettings: FormSettings = {
+        portalType,
+        title: values.title,
+        session: values.session,
+        year: values.year,
+        semester: values.semester,
+        program: values.program,
+        minStudents,
+        maxStudents,
+        includeFields: selectedFields,
+        pdfFields: selectedPdfFields,
+        customFields,
+      };
+
+      // Call the Google Forms API service
+      const response = await createGoogleForm(formSettings);
+
+      if (!response) {
+        toast.error('Failed to create form');
+        return;
+      }
+
+      // Add questions to the form
+      const questionsAdded = await addFormQuestions(response.formId, formSettings);
+
+      if (!questionsAdded) {
+        toast.warning('Form created but some questions may not have been added');
+      }
+
+      // Notify success
+      toast.success('Form created successfully!');
+      onFormCreated(formSettings, response.formUrl, response.embedCode);
+      onClose();
+    } catch (error) {
+      console.error('Error creating form:', error);
+      toast.error('Failed to create form. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -203,7 +223,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({
         <DialogHeader>
           <DialogTitle>Create {portalType === 'project' ? 'Project' : 'Internship'} Submission Form</DialogTitle>
           <DialogDescription>
-            Generate a customized Google Form for data collection. Select the fields you want to include.
+            Generate a Google Form for data collection. Select the fields you want to include.
           </DialogDescription>
         </DialogHeader>
         
@@ -418,9 +438,18 @@ const FormCreator: React.FC<FormCreatorProps> = ({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit">
-                <FileText className="h-4 w-4 mr-2" />
-                Create Form
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Create Form
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>
