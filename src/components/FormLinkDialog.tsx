@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
 
 interface FormLinkDialogProps {
   isOpen: boolean;
@@ -40,6 +41,10 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
   };
 
   const handleVisitForm = () => {
+    // In a real implementation, this would open an actual form
+    // For now, we'll just inform the user that this is a mock URL
+    toast.info('This is a sample form URL. In a production environment, this would open your actual form.');
+    
     // Open in a new tab and ensure the URL has the proper format
     const formattedUrl = formUrl.startsWith('http') ? formUrl : `https://${formUrl}`;
     window.open(formattedUrl, '_blank');
@@ -69,18 +74,19 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">This is a mock form URL for demonstration purposes.</p>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="embed-code">Embed Code</Label>
             <div className="flex items-stretch gap-2">
-              <Input
+              <Textarea
                 id="embed-code"
                 value={embedCode}
                 readOnly
-                className="flex-1"
+                className="flex-1 h-24 font-mono text-xs"
               />
-              <Button variant="outline" size="icon" onClick={handleCopyEmbed}>
+              <Button variant="outline" size="icon" onClick={handleCopyEmbed} className="self-start">
                 <Copy className="h-4 w-4" />
               </Button>
             </div>

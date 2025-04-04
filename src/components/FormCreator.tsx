@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -77,14 +76,8 @@ const formSchema = z.object({
   year: z.string().min(1, "Year is required"),
   semester: z.string().min(1, "Semester is required"),
   program: z.string().optional(),
-  minStudents: z.union([
-    z.string(),
-    z.number()
-  ]).transform(val => Number(val)).optional(),
-  maxStudents: z.union([
-    z.string(), 
-    z.number()
-  ]).transform(val => Number(val)).optional(),
+  minStudents: z.coerce.number().min(1, "Minimum students must be at least 1").default(1),
+  maxStudents: z.coerce.number().min(1, "Maximum students must be at least 1").default(4),
   newFieldName: z.string().optional(),
 });
 
@@ -103,8 +96,8 @@ const FormCreator: React.FC<FormCreatorProps> = ({
       year: '',
       semester: '',
       program: '',
-      minStudents: '1',
-      maxStudents: '4',
+      minStudents: 1,
+      maxStudents: 4,
       newFieldName: '',
     },
   });
@@ -163,8 +156,8 @@ const FormCreator: React.FC<FormCreatorProps> = ({
       return;
     }
 
-    const minStudents = Number(values.minStudents) || 1;
-    const maxStudents = Number(values.maxStudents) || 4;
+    const minStudents = values.minStudents || 1;
+    const maxStudents = values.maxStudents || 4;
 
     if (minStudents < 1) {
       toast.error('Minimum students must be at least 1');
@@ -191,8 +184,12 @@ const FormCreator: React.FC<FormCreatorProps> = ({
       customFields,
     };
 
-    // Generate a mock Google Form URL (in a real scenario, this would call an API)
-    const formUrl = `https://docs.google.com/forms/d/e/${Date.now()}/viewform`;
+    // Generate a mock Google Form URL
+    const mockFormId = `e${Date.now()}`;
+    const formUrl = `https://docs.google.com/forms/d/e/${mockFormId}/viewform`;
+    
+    // Generate embed code for the form
+    const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="1000" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
     
     // Notify success
     toast.success('Form created successfully!');
