@@ -15,7 +15,7 @@ export type GroupedProjectData = {
     phoneNo: string;
     year: string;
     semester: string;
-    course: string;
+    program: string;
     facultyCoordinator: string;
   }[];
   form: string;
@@ -23,8 +23,9 @@ export type GroupedProjectData = {
   report: string;
   year: string;
   semester: string;
-  course: string;
+  program: string;
   facultyCoordinator: string;
+  session: string;
 };
 
 /**
@@ -48,8 +49,9 @@ export function groupProjectsByGroup(projects: ProjectData[]): GroupedProjectDat
         report: project.report,
         year: project.year,
         semester: project.semester,
-        course: project.course,
-        facultyCoordinator: project.facultyCoordinator
+        program: project.program,
+        facultyCoordinator: project.facultyCoordinator,
+        session: project.session
       };
     }
     
@@ -62,7 +64,7 @@ export function groupProjectsByGroup(projects: ProjectData[]): GroupedProjectDat
       phoneNo: project.phoneNo,
       year: project.year,
       semester: project.semester,
-      course: project.course,
+      program: project.program,
       facultyCoordinator: project.facultyCoordinator
     });
     
@@ -105,8 +107,9 @@ export function ungroupProjects(groupedData: GroupedProjectData[]): ProjectData[
         report: group.report,
         year: student.year,
         semester: student.semester,
-        course: student.course,
-        facultyCoordinator: student.facultyCoordinator
+        program: student.program,
+        facultyCoordinator: student.facultyCoordinator,
+        session: group.session
       });
     });
   });

@@ -15,7 +15,7 @@ export function generateSampleProjects(count = 70): ProjectData[] {
   const industryMentors = ['Mr. Patel', 'Ms. Gupta', 'Mr. Reddy', 'Ms. Shah', 'Mr. Kumar'];
   const years = ['4','3', '2', '1'];
   const semesters = ['8','7','6','5','4','3','2','1'];
-  const courses = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
+  const programs = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
   const facultyCoordinators = [
     'Dr. Pankaj', 
     'Dr. Meenu', 
@@ -69,7 +69,8 @@ export function generateSampleProjects(count = 70): ProjectData[] {
       report: index % 4 === 0 ? `report_group${groupIndex + 1}.pdf` : "",
       year: years[groupIndex % years.length],
       semester: semesters[groupIndex % semesters.length],
-      course: courses[groupIndex % courses.length],
+      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024',
+      program: programs[groupIndex % programs.length],
       facultyCoordinator: facultyCoordinators[groupIndex % facultyCoordinators.length],
     };
   });
@@ -95,7 +96,7 @@ export function generateSampleInternships(count = 50): InternshipData[] {
       pop: index % 4 === 0 ? `pop_${index + 1}.pdf` : "",
       year: years[index % years.length],
       semester: semesters[index % semesters.length],
-      course: programs[index % programs.length],
+      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024',
       ...(index % 5 === 0 ? { "Attendance May": `attendance_may_${index + 1}.pdf` } : {}),
       ...(index % 7 === 0 ? { "Attendance June": `attendance_june_${index + 1}.pdf` } : {})
     };
@@ -115,15 +116,19 @@ export function filterProjects(
                           filters.semester === 'all-semesters' || 
                           project.semester === filters.semester;
                           
-    const courseMatch = !filters.course || 
-                        filters.course === 'all-courses' || 
-                        project.course === filters.course;
+    const programMatch = !filters.program || 
+                        filters.program === 'all-programs' || 
+                        project.program === filters.program;
                         
     const facultyCoordinatorMatch = !filters.facultyCoordinator || 
                                     filters.facultyCoordinator === 'all-coordinators' || 
                                     project.facultyCoordinator === filters.facultyCoordinator;
 
-    return yearMatch && semesterMatch && courseMatch && facultyCoordinatorMatch;
+    const sessionMatch = !filters.session ||
+                         filters.session === 'all-sessions' ||
+                         project.session === filters.session;
+
+    return yearMatch && semesterMatch && programMatch && facultyCoordinatorMatch && sessionMatch;
   });
 }
 
@@ -140,11 +145,15 @@ export function filterInternships(
                           filters.semester === 'all-semesters' || 
                           internship.semester === filters.semester;
                           
-    const courseMatch = !filters.course || 
-                        filters.course === 'all-courses' || 
-                        internship.course === filters.course;
+    const programMatch = !filters.program || 
+                        filters.program === 'all-programs' || 
+                        internship.program === filters.program;
 
-    return yearMatch && semesterMatch && courseMatch;
+    const sessionMatch = !filters.session ||
+                         filters.session === 'all-sessions' ||
+                         internship.session === filters.session;
+
+    return yearMatch && semesterMatch && programMatch && sessionMatch;
   });
 }
 
@@ -167,7 +176,7 @@ export function exportTableToPDF(
   const filterTexts = [
     filters.year ? `Year: ${filters.year}` : "",
     filters.semester ? `Semester: ${filters.semester}` : "",
-    filters.course ? `Course: ${filters.course}` : "",
+    filters.program ? `Program: ${filters.program}` : "",
     filters.facultyCoordinator
       ? `Faculty Coordinator: ${filters.facultyCoordinator}`
       : "",
@@ -346,7 +355,7 @@ export function exportInternshipTableToPDF(
   const filterTexts = [
     filters.year ? `Year: ${filters.year}` : "",
     filters.semester ? `Semester: ${filters.semester}` : "",
-    filters.course ? `Course: ${filters.course}` : "",
+    filters.program ? `Program: ${filters.program}` : "",
   ].filter(Boolean);
 
   if (filterTexts.length > 0) {

@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { ProjectData, Filter, InternshipData, ProjectEntry, InternshipEntry } from '@/lib/types';
 
@@ -9,10 +10,10 @@ const supabaseKey = 'your-supabase-anon-key';
 // Create a client with your Supabase credentials
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper function to normalize course names
-const normalizeCourse = (course: string): string => {
+// Helper function to normalize program names
+const normalizeProgram = (program: string): string => {
   // Convert to lowercase and remove dots and spaces
-  const normalized = course.toLowerCase().replace(/\s|\./g, '');
+  const normalized = program.toLowerCase().replace(/\s|\./g, '');
   
   // Map common variations
   const mappings: Record<string, string> = {
@@ -58,6 +59,7 @@ const projectToDbFormat = (project: ProjectData) => {
     year: data.year,
     semester: data.semester,
     session: data.session,
+    program: data.program,
     faculty_coordinator: data.facultyCoordinator,
   };
 };
@@ -80,6 +82,7 @@ const dbToProjectFormat = (dbProject: any): ProjectEntry => {
     year: dbProject.year || '',
     semester: dbProject.semester || '',
     session: dbProject.session || '',
+    program: dbProject.program || '',
     facultyCoordinator: dbProject.faculty_coordinator || '',
   };
 };
@@ -99,6 +102,9 @@ export async function fetchProjects(filters?: Filter) {
     }
     if (filters.session && filters.session !== 'all-sessions') {
       query = query.eq('session', filters.session);
+    }
+    if (filters.program && filters.program !== 'all-programs') {
+      query = query.eq('program', filters.program);
     }
     if (filters.facultyCoordinator && filters.facultyCoordinator !== 'all-coordinators') {
       query = query.eq('faculty_coordinator', filters.facultyCoordinator);

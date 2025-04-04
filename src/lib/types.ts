@@ -75,3 +75,7 @@ export interface FormSubmission {
   data: Record<string, string>;
   files: Record<string, string>;
 }
+
+// Add ProjectEntry and InternshipEntry types for supabase service
+export interface ProjectEntry extends ProjectData {}
+export interface InternshipEntry extends InternshipData {}
