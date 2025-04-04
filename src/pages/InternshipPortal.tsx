@@ -5,8 +5,6 @@ import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import InternshipFilterSection from '@/components/InternshipFilterSection';
 import InternshipTable from '@/components/InternshipTable';
-import FileUpload from '@/components/FileUpload';
-import UploadModal from '@/components/UploadModal';
 import FormCreator from '@/components/FormCreator';
 import FormLinkDialog from '@/components/FormLinkDialog';
 import { Button } from '@/components/ui/button';
@@ -15,6 +13,7 @@ import { Download, FileUp, FileText } from 'lucide-react';
 import { generateSampleInternships, filterInternships, exportInternshipTableToPDF } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Filter, InternshipData } from '@/lib/types';
+import UploadModal from '@/components/UploadModal';
 
 const InternshipPortal = () => {
   const navigate = useNavigate();
@@ -35,6 +34,7 @@ const InternshipPortal = () => {
   const [pageSize, setPageSize] = useState(50);
   const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
+  const [availablePrograms, setAvailablePrograms] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -43,10 +43,11 @@ const InternshipPortal = () => {
 
     const sampleData = generateSampleInternships(40);
     
-    // Add session field to sample data
+    // Add session field and program to sample data
     const withSessionData = sampleData.map(item => ({
       ...item,
-      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024'
+      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024',
+      program: ['BTech CSE', 'BTech CSE (FSD)', 'BTech CSE (UI/UX)', 'BTech AI/ML', 'BSc CS', 'BSc DS', 'BSc Cyber', 'BCA', 'BCA (AI/DS)'][Math.floor(Math.random() * 9)]
     }));
     
     const extraColumns = new Set<string>();
@@ -62,13 +63,17 @@ const InternshipPortal = () => {
       });
     });
     
-    // Extract available sessions
+    // Extract available sessions and programs
     const sessions = new Set<string>();
+    const programs = new Set<string>();
+    
     withSessionData.forEach(item => {
       if (item.session) sessions.add(item.session);
+      if (item.program) programs.add(item.program);
     });
     
     setAvailableSessions(Array.from(sessions));
+    setAvailablePrograms(Array.from(programs));
     setDynamicColumns(Array.from(extraColumns));
     setAllInternships(withSessionData);
     setFilteredInternships(withSessionData);
@@ -97,15 +102,21 @@ const InternshipPortal = () => {
       }
     });
     
-    // Update available sessions
+    // Update available sessions and programs
     const sessions = new Set<string>(availableSessions);
+    const programs = new Set<string>(availablePrograms);
+    
     newData.forEach(item => {
       if (item.session && !sessions.has(item.session)) {
         sessions.add(item.session);
       }
+      if (item.program && !programs.has(item.program)) {
+        programs.add(item.program);
+      }
     });
     
     setAvailableSessions(Array.from(sessions));
+    setAvailablePrograms(Array.from(programs));
     setAllInternships(updatedAllInternships);
   };
 
@@ -130,15 +141,21 @@ const InternshipPortal = () => {
       setDynamicColumns(Array.from(newDynamicColumns));
     }
     
-    // Update available sessions
+    // Update available sessions and programs
     const sessions = new Set<string>(availableSessions);
+    const programs = new Set<string>(availablePrograms);
+    
     entries.forEach(item => {
       if (item.session && !sessions.has(item.session)) {
         sessions.add(item.session);
       }
+      if (item.program && !programs.has(item.program)) {
+        programs.add(item.program);
+      }
     });
     
     setAvailableSessions(Array.from(sessions));
+    setAvailablePrograms(Array.from(programs));
     
     // Update internships data by matching on rollNo and program
     const updatedInternships = [...allInternships];
@@ -183,11 +200,6 @@ const InternshipPortal = () => {
       'Internship Portal - Data Export'
     );
     toast.success('PDF exported successfully');
-  };
-
-  const handleDriveConnect = (driveLink: string) => {
-    console.log('Connected to Google Drive:', driveLink);
-    toast.success('Successfully connected to Google Drive');
   };
 
   const handleAddColumn = (columnName: string) => {
@@ -285,14 +297,9 @@ const InternshipPortal = () => {
             <InternshipFilterSection 
               onFilterChange={handleFilterChange} 
               availableSessions={availableSessions}
-            />
-          </motion.div>
-          
-          <motion.div className="mb-8">
-            <FileUpload 
-              onUploadComplete={handleDriveConnect} 
-              portalType="internship"
-              onAddColumn={handleAddColumn}
+              availablePrograms={availablePrograms}
+              showSemester={false}
+              inlineLayout={true}
             />
           </motion.div>
           
@@ -316,6 +323,8 @@ const InternshipPortal = () => {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onUpload={(entries, metadata) => handleUpload(entries as InternshipData[], metadata)}
+        portalType="internship"
+        showOnlyFacultyCoordinator={true}
       />
       
       <FormCreator

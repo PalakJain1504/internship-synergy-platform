@@ -41,6 +41,14 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
       });
   };
 
+  const handleOpenForm = () => {
+    // In a real app, this would go to an actual Google Form
+    // For simulation, we'll generate a mock form URL and open it
+    const mockFormUrl = formUrl || `https://docs.google.com/forms/d/e/${formTitle.replace(/\s+/g, '-')}/viewform`;
+    window.open(mockFormUrl, '_blank');
+    toast.info('This is a simulated form link. In a real app, this would open the actual Google Form.');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[550px]">
@@ -98,7 +106,7 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
             Close
           </Button>
           <Button 
-            onClick={() => window.open(formUrl, '_blank')} 
+            onClick={handleOpenForm} 
             className="sm:flex-1"
           >
             Open Form <ExternalLink className="ml-2 h-4 w-4" />

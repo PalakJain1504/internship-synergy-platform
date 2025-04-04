@@ -30,9 +30,11 @@ const ProjectPortal = () => {
     semester: '',
     session: '',
     facultyCoordinator: '',
+    program: '',
   });
   const [pageSize, setPageSize] = useState(50);
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
+  const [availablePrograms, setAvailablePrograms] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -44,16 +46,21 @@ const ProjectPortal = () => {
     // Add session field to sample data
     const withSessionData = sampleData.map(item => ({
       ...item,
-      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024'
+      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024',
+      program: ['BTech CSE', 'BTech CSE (FSD)', 'BTech CSE (UI/UX)', 'BTech AI/ML', 'BSc CS', 'BSc DS', 'BSc Cyber', 'BCA', 'BCA (AI/DS)'][Math.floor(Math.random() * 9)]
     }));
     
     // Extract available sessions
     const sessions = new Set<string>();
+    const programs = new Set<string>();
+    
     withSessionData.forEach(item => {
       if (item.session) sessions.add(item.session);
+      if (item.program) programs.add(item.program);
     });
     
     setAvailableSessions(Array.from(sessions));
+    setAvailablePrograms(Array.from(programs));
     setAllProjects(withSessionData);
     setFilteredProjects(withSessionData);
     
@@ -81,28 +88,40 @@ const ProjectPortal = () => {
       }
     });
     
-    // Update available sessions
+    // Update available sessions and programs
     const sessions = new Set<string>(availableSessions);
+    const programs = new Set<string>(availablePrograms);
+    
     newData.forEach(item => {
       if (item.session && !sessions.has(item.session)) {
         sessions.add(item.session);
       }
-    });
-    
-    setAvailableSessions(Array.from(sessions));
-    setAllProjects(updatedAllProjects);
-  };
-
-  const handleUpload = (entries: ProjectData[], metadata: Filter) => {
-    // Update available sessions
-    const sessions = new Set<string>(availableSessions);
-    entries.forEach(item => {
-      if (item.session && !sessions.has(item.session)) {
-        sessions.add(item.session);
+      if (item.program && !programs.has(item.program)) {
+        programs.add(item.program);
       }
     });
     
     setAvailableSessions(Array.from(sessions));
+    setAvailablePrograms(Array.from(programs));
+    setAllProjects(updatedAllProjects);
+  };
+
+  const handleUpload = (entries: ProjectData[], metadata: Filter) => {
+    // Update available sessions and programs
+    const sessions = new Set<string>(availableSessions);
+    const programs = new Set<string>(availablePrograms);
+    
+    entries.forEach(item => {
+      if (item.session && !sessions.has(item.session)) {
+        sessions.add(item.session);
+      }
+      if (item.program && !programs.has(item.program)) {
+        programs.add(item.program);
+      }
+    });
+    
+    setAvailableSessions(Array.from(sessions));
+    setAvailablePrograms(Array.from(programs));
     
     // Update projects data by matching on rollNo, groupNo, and name
     const updatedProjects = [...allProjects];
@@ -245,7 +264,8 @@ const ProjectPortal = () => {
           <motion.div variants={itemVariants} className="mb-8">
             <FilterSection 
               onFilterChange={handleFilterChange}
-              availableSessions={availableSessions} 
+              availableSessions={availableSessions}
+              availablePrograms={availablePrograms}
             />
           </motion.div>
           

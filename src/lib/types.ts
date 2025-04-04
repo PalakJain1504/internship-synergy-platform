@@ -21,6 +21,7 @@ export interface ProjectData {
   year: string;
   semester: string;
   session: string;
+  program: string; // Adding program field for projects
   facultyCoordinator: string;
   isEditing?: boolean;
   isNew?: boolean;
@@ -53,10 +54,6 @@ export interface Filter {
   program?: string;
 }
 
-// Removing redundant interfaces since they're now identical to the base interfaces
-export type ProjectEntry = ProjectData;
-export type InternshipEntry = InternshipData;
-
 // Define Form submission settings types
 export interface FormSettings {
   portalType: 'project' | 'internship';
@@ -65,6 +62,8 @@ export interface FormSettings {
   year: string;
   semester: string;
   program?: string;
+  minStudents?: number;
+  maxStudents?: number;
   includeFields: string[];
   pdfFields: string[];
   customFields: string[];

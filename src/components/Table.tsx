@@ -63,7 +63,8 @@ const Table: React.FC<TableProps> = ({
         title: string,
         domain: string,
         facultyMentor: string,
-        industryMentor: string
+        industryMentor: string,
+        program: string
       }
     }> = {};
     
@@ -77,7 +78,8 @@ const Table: React.FC<TableProps> = ({
             title: entry.title || '',
             domain: entry.domain || '',
             facultyMentor: entry.facultyMentor || '',
-            industryMentor: entry.industryMentor || ''
+            industryMentor: entry.industryMentor || '',
+            program: entry.program || ''
           }
         };
       }
@@ -174,6 +176,7 @@ const Table: React.FC<TableProps> = ({
       year: '',
       semester: '',
       session: '',
+      program: '',
       facultyCoordinator: '',
       isEditing: true,
       isNew: true,
@@ -199,7 +202,7 @@ const Table: React.FC<TableProps> = ({
 
   // Handle input change in editable cells
   const handleInputChange = (
-    field: keyof ProjectData,
+    field: string,
     value: string
   ) => {
     if (!editedData) return;
@@ -236,17 +239,17 @@ const Table: React.FC<TableProps> = ({
   };
 
   // Render a table cell based on whether it's being edited
-  const renderCell = (row: ProjectData, field: keyof ProjectData, isFirstInGroup: boolean = false) => {
+  const renderCell = (row: ProjectData, field: string, isFirstInGroup: boolean = false) => {
     const isEditing = row.id === editingRow;
     
     // For grouped fields, only show on the first row of the group
-    if (!isFirstInGroup && ['groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor'].includes(field)) {
+    if (!isFirstInGroup && ['groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor', 'program'].includes(field)) {
       return null;
     }
     
     // Special handling for form, presentation, and report fields
     if (field === 'form' || field === 'presentation' || field === 'report') {
-      const fileValue = row[field] as string;
+      const fileValue = row[field];
       
       if (isEditing) {
         return (
@@ -294,14 +297,14 @@ const Table: React.FC<TableProps> = ({
     if (isEditing) {
       return (
         <Input
-          value={(editedData?.[field] as string) || ''}
+          value={(editedData?.[field as keyof ProjectData] as string) || ''}
           onChange={(e) => handleInputChange(field, e.target.value)}
           className="h-8 text-sm"
         />
       );
     }
     
-    return <span>{row[field] as string}</span>;
+    return <span>{row[field as keyof ProjectData] as string}</span>;
   };
 
   return (
@@ -326,6 +329,7 @@ const Table: React.FC<TableProps> = ({
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Phone No.</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Title</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Domain</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Program</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Faculty Mentor</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Industry Mentor</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Form</th>
@@ -356,6 +360,9 @@ const Table: React.FC<TableProps> = ({
                     </td>
                     <td className="px-4 py-2 text-sm whitespace-nowrap">
                       {rowIndex === 0 ? renderCell(row, 'domain', true) : null}
+                    </td>
+                    <td className="px-4 py-2 text-sm whitespace-nowrap">
+                      {rowIndex === 0 ? renderCell(row, 'program', true) : null}
                     </td>
                     <td className="px-4 py-2 text-sm whitespace-nowrap">
                       {rowIndex === 0 ? renderCell(row, 'facultyMentor', true) : null}
@@ -433,7 +440,7 @@ const Table: React.FC<TableProps> = ({
               ))
             ) : (
               <tr>
-                <td colSpan={15} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={16} className="px-4 py-8 text-center text-gray-500">
                   No data available. Add a new entry or upload an Excel sheet to get started.
                 </td>
               </tr>

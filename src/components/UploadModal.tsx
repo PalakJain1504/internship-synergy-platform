@@ -20,15 +20,24 @@ interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpload: (entries: ProjectData[] | InternshipData[], metadata: Filter) => void;
+  portalType?: 'project' | 'internship';
+  showOnlyFacultyCoordinator?: boolean;
 }
 
-const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) => {
+const UploadModal: React.FC<UploadModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onUpload,
+  portalType = 'project',
+  showOnlyFacultyCoordinator = false
+}) => {
   const [file, setFile] = useState<File | null>(null);
   const [metadata, setMetadata] = useState<Filter>({
     year: '',
     semester: '',
     session: '',
     facultyCoordinator: '',
+    program: '',
   });
   const [isUploading, setIsUploading] = useState(false);
   const [previewData, setPreviewData] = useState<{
@@ -36,14 +45,49 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     rows: string[][];
     missingRequired: boolean;
   } | null>(null);
+  const [availablePrograms] = useState([
+    { group: 'BTech', options: ['BTech CSE', 'BTech CSE (FSD)', 'BTech CSE (UI/UX)', 'BTech AI/ML']},
+    { group: 'BSc', options: ['BSc CS', 'BSc DS', 'BSc Cyber']},
+    { group: 'BCA', options: ['BCA', 'BCA (AI/DS)']}
+  ]);
+
+  // Mapping for year to semesters
+  const yearToSemesterMap: Record<string, string[]> = {
+    '1': ['1', '2'],
+    '2': ['3', '4'],
+    '3': ['5', '6'],
+    '4': ['7', '8']
+  };
+
+  const [availableSemesters, setAvailableSemesters] = useState<string[]>(['1', '2', '3', '4', '5', '6', '7', '8']);
 
   useEffect(() => {
     if (!isOpen) {
       setFile(null);
       setPreviewData(null);
       setIsUploading(false);
+      setMetadata({
+        year: '',
+        semester: '',
+        session: '',
+        facultyCoordinator: '',
+        program: '',
+      });
     }
   }, [isOpen]);
+
+  // Update available semesters when year changes
+  useEffect(() => {
+    if (metadata.year) {
+      setAvailableSemesters(yearToSemesterMap[metadata.year] || []);
+      // If current selected semester is not in the available semesters, reset it
+      if (metadata.semester && !yearToSemesterMap[metadata.year]?.includes(metadata.semester)) {
+        setMetadata(prev => ({ ...prev, semester: '' }));
+      }
+    } else {
+      setAvailableSemesters(['1', '2', '3', '4', '5', '6', '7', '8']);
+    }
+  }, [metadata.year]);
 
   const parseExcelFile = async (excelFile: File) => {
     return new Promise<{headers: string[], rows: any[]}>((resolve, reject) => {
@@ -217,6 +261,34 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
       console.log(`  Matched as student name: "${originalHeader}"`);
       return 'name';
     }
+
+    if (/email/i.test(normalized)) {
+      return 'email';
+    }
+
+    if (/phone|mobile|contact/i.test(normalized)) {
+      return 'phoneNo';
+    }
+
+    if (/group|gr\.?no|grno/i.test(normalized)) {
+      return 'groupNo';
+    }
+
+    if (/title|project|projecttitle/i.test(normalized)) {
+      return 'title';
+    }
+
+    if (/domain|area|field/i.test(normalized)) {
+      return 'domain';
+    }
+
+    if (/faculty|mentor|guide|internal/i.test(normalized)) {
+      return 'facultyMentor';
+    }
+
+    if (/industry|external|company/i.test(normalized)) {
+      return 'industryMentor';
+    }
     
     if (/program|course|degree|branch|stream/i.test(normalized)) {
       return 'program';
@@ -266,14 +338,59 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     return originalHeader;
   };
 
+  // Function to normalize program names
+  const normalizeProgram = (programName: string): string => {
+    const lowerProgram = programName.toLowerCase().trim();
+    
+    // BTech variations
+    if (lowerProgram.includes('btech') || lowerProgram.includes('b.tech')) {
+      if (lowerProgram.includes('fsd') || lowerProgram.includes('full stack')) {
+        return 'BTech CSE (FSD)';
+      } else if (lowerProgram.includes('ui') || lowerProgram.includes('ux')) {
+        return 'BTech CSE (UI/UX)';
+      } else if (lowerProgram.includes('ai') || lowerProgram.includes('ml')) {
+        return 'BTech AI/ML';
+      } else {
+        return 'BTech CSE';
+      }
+    }
+    
+    // BSc variations
+    if (lowerProgram.includes('bsc') || lowerProgram.includes('b.sc')) {
+      if (lowerProgram.includes('data') || lowerProgram.includes('ds')) {
+        return 'BSc DS';
+      } else if (lowerProgram.includes('cyber') || lowerProgram.includes('security')) {
+        return 'BSc Cyber';
+      } else {
+        return 'BSc CS';
+      }
+    }
+    
+    // BCA variations
+    if (lowerProgram.includes('bca') || lowerProgram.includes('b.c.a')) {
+      if (lowerProgram.includes('ai') || lowerProgram.includes('data') || lowerProgram.includes('ds')) {
+        return 'BCA (AI/DS)';
+      } else {
+        return 'BCA';
+      }
+    }
+    
+    return programName; // Return as is if no match found
+  };
+
   const handleUpload = async () => {
     if (!file) {
       toast.error('Please select a file to upload');
       return;
     }
     
-    if (!metadata.year || !metadata.semester || !metadata.session) {
-      toast.error('Please fill in all required metadata fields (year, semester, session)');
+    if (!metadata.year || !metadata.session) {
+      toast.error('Please fill in all required metadata fields (year, session)');
+      return;
+    }
+    
+    if (portalType === 'project' && !metadata.semester) {
+      toast.error('Please select a semester');
       return;
     }
 
@@ -297,21 +414,38 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
         console.log(`Mapped column "${header}" (index ${index}) to field "${normalizedFieldName}"`);
       });
       
-      const entries = rows.map((row, rowIndex) => {
+      // Organize entries by group (for project portal)
+      const groupMap = new Map<string, any[]>();
+      
+      rows.forEach((row, rowIndex) => {
         const entry: Record<string, string> = {
           id: `upload-${Date.now()}-${rowIndex}`,
-          year: '',  // Will try to extract from data
+          year: metadata.year,
           semester: metadata.semester,
           session: metadata.session,
           rollNo: '',
           name: '',
-          program: '',
-          organization: '',
-          dates: '',
-          noc: '',
-          offerLetter: '',
-          pop: '',
+          program: metadata.program,
         };
+        
+        if (portalType === 'project') {
+          entry.groupNo = '';
+          entry.email = '';
+          entry.phoneNo = '';
+          entry.title = '';
+          entry.domain = '';
+          entry.facultyMentor = '';
+          entry.industryMentor = '';
+          entry.form = '';
+          entry.presentation = '';
+          entry.report = '';
+        } else {
+          entry.organization = '';
+          entry.dates = '';
+          entry.noc = '';
+          entry.offerLetter = '';
+          entry.pop = '';
+        }
         
         if (metadata.facultyCoordinator) {
           entry.facultyCoordinator = metadata.facultyCoordinator;
@@ -323,6 +457,12 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           
           if (fieldName && row[colIndex] !== undefined && row[colIndex] !== null) {
             entry[fieldName] = String(row[colIndex]);
+            
+            // Normalize program field if it exists
+            if (fieldName === 'program' && entry.program) {
+              entry.program = normalizeProgram(entry.program);
+            }
+            
             console.log(`Setting ${fieldName} = ${entry[fieldName]} from column ${colIndex}`);
           }
         }
@@ -383,16 +523,54 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           console.log(`Generated default name = ${entry.name}`);
         }
         
-        return entry;
+        // For project portal, organize by groups
+        if (portalType === 'project') {
+          const groupKey = entry.groupNo || 'unknown';
+          if (!groupMap.has(groupKey)) {
+            groupMap.set(groupKey, []);
+          }
+          groupMap.get(groupKey)?.push(entry);
+        } else {
+          // For internship portal, just add to the group map with a unique key
+          const uniqueKey = `${entry.rollNo}-${rowIndex}`;
+          groupMap.set(uniqueKey, [entry]);
+        }
+      });
+      
+      // Process groups (for project portal)
+      const finalEntries: any[] = [];
+      
+      groupMap.forEach((groupEntries, groupKey) => {
+        if (portalType === 'project' && groupEntries.length > 0) {
+          // For project portal, copy group-level fields from the first entry to all entries
+          const groupFields = ['groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor'];
+          const firstEntry = groupEntries[0];
+          
+          groupEntries.forEach((entry, index) => {
+            if (index > 0) {
+              groupFields.forEach(field => {
+                if (firstEntry[field]) {
+                  entry[field] = firstEntry[field];
+                }
+              });
+            }
+            finalEntries.push(entry);
+          });
+        } else {
+          // For internship portal, just add each entry
+          groupEntries.forEach(entry => {
+            finalEntries.push(entry);
+          });
+        }
       });
 
-      console.log(`Successfully processed ${entries.length} entries`);
+      console.log(`Successfully processed ${finalEntries.length} entries`);
       
-      onUpload(entries as any, metadata);
+      onUpload(finalEntries as any, metadata);
       setIsUploading(false);
       setFile(null);
       setPreviewData(null);
-      toast.success(`Successfully uploaded ${entries.length} entries`);
+      toast.success(`Successfully uploaded ${finalEntries.length} entries`);
       onClose();
     } catch (error) {
       console.error('Error during upload:', error);
@@ -520,7 +698,18 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-700">Metadata</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="session">Session*</Label>
+                <Input
+                  id="session"
+                  type="text"
+                  placeholder="e.g., 2024-2025"
+                  value={metadata.session}
+                  onChange={(e) => handleMetadataChange('session', e.target.value)}
+                />
+              </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="year">Year*</Label>
                 <Select
@@ -539,57 +728,69 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                 </Select>
               </div>
 
+              {portalType === 'project' && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="semester">Semester*</Label>
+                  <Select
+                    value={metadata.semester}
+                    onValueChange={(value) => handleMetadataChange('semester', value)}
+                  >
+                    <SelectTrigger id="semester">
+                      <SelectValue placeholder="Select Semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSemesters.map(semester => (
+                        <SelectItem key={semester} value={semester}>{semester}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-1.5">
-                <Label htmlFor="semester">Semester*</Label>
+                <Label htmlFor="program">Program</Label>
                 <Select
-                  value={metadata.semester}
-                  onValueChange={(value) => handleMetadataChange('semester', value)}
+                  value={metadata.program}
+                  onValueChange={(value) => handleMetadataChange('program', value)}
                 >
-                  <SelectTrigger id="semester">
-                    <SelectValue placeholder="Select Semester" />
+                  <SelectTrigger id="program">
+                    <SelectValue placeholder="Select Program" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="8">8</SelectItem>
-                    <SelectItem value="7">7</SelectItem>
-                    <SelectItem value="6">6</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
+                    {availablePrograms.map((group) => (
+                      <React.Fragment key={group.group}>
+                        <SelectItem value={group.group} disabled>{group.group}</SelectItem>
+                        {group.options.map(option => (
+                          <SelectItem key={option} value={option} className="pl-6">
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </React.Fragment>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="session">Session*</Label>
-                <Input
-                  id="session"
-                  type="text"
-                  placeholder="e.g., 2024-2025"
-                  value={metadata.session}
-                  onChange={(e) => handleMetadataChange('session', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
-                <Select
-                  value={metadata.facultyCoordinator || ''}
-                  onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}
-                >
-                  <SelectTrigger id="facultyCoordinator">
-                    <SelectValue placeholder="Select Coordinator" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-coordinators">All Coordinators</SelectItem>
-                    <SelectItem value="Dr. Pankaj">Dr. Pankaj</SelectItem>
-                    <SelectItem value="Dr. Meenu">Dr. Meenu</SelectItem>
-                    <SelectItem value="Dr. Swati">Dr. Swati</SelectItem>
-                    <SelectItem value="Dr. Anshu">Dr. Anshu</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {(!showOnlyFacultyCoordinator || portalType === 'project') && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
+                  <Select
+                    value={metadata.facultyCoordinator || ''}
+                    onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}
+                  >
+                    <SelectTrigger id="facultyCoordinator">
+                      <SelectValue placeholder="Select Coordinator" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-coordinators">All Coordinators</SelectItem>
+                      <SelectItem value="Dr. Pankaj">Dr. Pankaj</SelectItem>
+                      <SelectItem value="Dr. Meenu">Dr. Meenu</SelectItem>
+                      <SelectItem value="Dr. Swati">Dr. Swati</SelectItem>
+                      <SelectItem value="Dr. Anshu">Dr. Anshu</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
 
