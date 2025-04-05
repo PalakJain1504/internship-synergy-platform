@@ -13,16 +13,13 @@ import {
 import { FilterIcon, RefreshCw } from 'lucide-react';
 import { Filter } from '@/lib/types';
 
-// Sample data for filters
-const semesters = ['8','7','6','5','4','3','2','1'];
-const programs = ['B.Tech', 'M.Tech', 'BCA', 'MCA', 'B.Sc', 'M.Sc'];
-
 interface FilterSectionProps {
   onFilterChange: (filters: Filter) => void;
   availableSessions?: string[];
   availablePrograms?: string[];
   showSemester?: boolean;
   inlineLayout?: boolean;
+  showFacultyCoordinatorOnly?: boolean;
 }
 
 const InternshipFilterSection: React.FC<FilterSectionProps> = ({ 
@@ -30,7 +27,8 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
   availableSessions = [],
   availablePrograms = [],
   showSemester = true,
-  inlineLayout = false
+  inlineLayout = false,
+  showFacultyCoordinatorOnly = false
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState<Filter>({
@@ -38,6 +36,7 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
     semester: '',
     session: '',
     program: '',
+    facultyCoordinator: '',
   });
 
   const handleFilterChange = (key: keyof Filter, value: string) => {
@@ -52,6 +51,7 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
       semester: '',
       session: '',
       program: '',
+      facultyCoordinator: '',
     };
     setFilters(resetFilters);
     onFilterChange(resetFilters);
@@ -70,6 +70,18 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
   const uniquePrograms = availablePrograms.length > 0
     ? ['all-programs', ...new Set(availablePrograms)]
     : ['all-programs', 'BTech CSE', 'BTech CSE (FSD)', 'BTech CSE (UI/UX)', 'BTech AI/ML', 'BSc CS', 'BSc DS', 'BSc Cyber', 'BCA', 'BCA (AI/DS)'];
+
+  // Faculty coordinators list
+  const facultyCoordinators = [
+    'all-coordinators',
+    'Dr. Amit Kumar',
+    'Dr. Preeti Sharma',
+    'Dr. Neetu Singh',
+    'Dr. Rahul Gupta',
+    'Dr. Sunita Yadav',
+    'Dr. Rajesh Verma',
+    'Dr. Priya Patel'
+  ];
 
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -108,78 +120,98 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
         className="overflow-hidden"
       >
         <div className={`p-4 grid ${inlineLayout ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'} gap-4`}>
-          <div className="space-y-1.5 mb-4">
-            <Label htmlFor="session">Session</Label>
-            <Select value={filters.session} onValueChange={(value) => handleFilterChange('session', value)}>
-              <SelectTrigger id="session">
-                <SelectValue placeholder="Select Session" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-sessions">All Sessions</SelectItem>
-                {uniqueSessions.map((session) => (
-                  session !== 'all-sessions' && (
-                    <SelectItem key={session} value={session}>
-                      {session}
-                    </SelectItem>
-                  )
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5 mb-4">
-            <Label htmlFor="year">Year</Label>
-            <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
-              <SelectTrigger id="year">
-                <SelectValue placeholder="Select Year" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-years">All Years</SelectItem>
-                <SelectItem value="4">4</SelectItem>
-                <SelectItem value="3">3</SelectItem>
-                <SelectItem value="2">2</SelectItem>
-                <SelectItem value="1">1</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {showSemester && (
+          {showFacultyCoordinatorOnly ? (
             <div className="space-y-1.5 mb-4">
-              <Label htmlFor="semester">Semester</Label>
-              <Select value={filters.semester} onValueChange={(value) => handleFilterChange('semester', value)}>
-                <SelectTrigger id="semester">
-                  <SelectValue placeholder="Select Semester" />
+              <Label htmlFor="faculty-coordinator">Faculty Coordinator</Label>
+              <Select value={filters.facultyCoordinator || ''} onValueChange={(value) => handleFilterChange('facultyCoordinator', value)}>
+                <SelectTrigger id="faculty-coordinator">
+                  <SelectValue placeholder="Select Faculty Coordinator" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all-semesters">All Semesters</SelectItem>
-                  {semesters.map((semester) => (
-                    <SelectItem key={semester} value={semester}>
-                      {semester}
+                  {facultyCoordinators.map((coordinator) => (
+                    <SelectItem key={coordinator} value={coordinator}>
+                      {coordinator === 'all-coordinators' ? 'All Coordinators' : coordinator}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
+          ) : (
+            <>
+              <div className="space-y-1.5 mb-4">
+                <Label htmlFor="session">Session</Label>
+                <Select value={filters.session} onValueChange={(value) => handleFilterChange('session', value)}>
+                  <SelectTrigger id="session">
+                    <SelectValue placeholder="Select Session" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all-sessions">All Sessions</SelectItem>
+                    {uniqueSessions.map((session) => (
+                      session !== 'all-sessions' && (
+                        <SelectItem key={session} value={session}>
+                          {session}
+                        </SelectItem>
+                      )
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-1.5 mb-4">
-            <Label htmlFor="program">Program</Label>
-            <Select value={filters.program || ''} onValueChange={(value) => handleFilterChange('program', value)}>
-              <SelectTrigger id="program">
-                <SelectValue placeholder="Select Program" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-programs">All Programs</SelectItem>
-                {uniquePrograms.map((program) => (
-                  program !== 'all-programs' && (
-                    <SelectItem key={program} value={program}>
-                      {program}
-                    </SelectItem>
-                  )
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="space-y-1.5 mb-4">
+                <Label htmlFor="year">Year</Label>
+                <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
+                  <SelectTrigger id="year">
+                    <SelectValue placeholder="Select Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all-years">All Years</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {showSemester && (
+                <div className="space-y-1.5 mb-4">
+                  <Label htmlFor="semester">Semester</Label>
+                  <Select value={filters.semester} onValueChange={(value) => handleFilterChange('semester', value)}>
+                    <SelectTrigger id="semester">
+                      <SelectValue placeholder="Select Semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-semesters">All Semesters</SelectItem>
+                      {['8','7','6','5','4','3','2','1'].map((semester) => (
+                        <SelectItem key={semester} value={semester}>
+                          {semester}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="space-y-1.5 mb-4">
+                <Label htmlFor="program">Program</Label>
+                <Select value={filters.program || ''} onValueChange={(value) => handleFilterChange('program', value)}>
+                  <SelectTrigger id="program">
+                    <SelectValue placeholder="Select Program" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all-programs">All Programs</SelectItem>
+                    {uniquePrograms.map((program) => (
+                      program !== 'all-programs' && (
+                        <SelectItem key={program} value={program}>
+                          {program}
+                        </SelectItem>
+                      )
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
         </div>
       </motion.div>
     </div>

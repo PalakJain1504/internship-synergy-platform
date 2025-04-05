@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -13,6 +14,7 @@ import { generateSampleInternships, filterInternships, exportInternshipTableToPD
 import { motion } from 'framer-motion';
 import { Filter, InternshipData } from '@/lib/types';
 import UploadModal from '@/components/UploadModal';
+import { fetchInternships, uploadMultipleInternships } from '@/services/supabaseService';
 
 const InternshipPortal = () => {
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ const InternshipPortal = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isFormCreatorOpen, setIsFormCreatorOpen] = useState(false);
   const [isFormLinkDialogOpen, setIsFormLinkDialogOpen] = useState(false);
-  const [formDetails, setFormDetails] = useState({ title: '', url: '', embedCode: '' });
+  const [formDetails, setFormDetails] = useState({ title: '', url: '' });
   const [allInternships, setAllInternships] = useState<InternshipData[]>([]);
   const [filteredInternships, setFilteredInternships] = useState<InternshipData[]>([]);
   const [currentFilters, setCurrentFilters] = useState<Filter>({
@@ -29,53 +31,82 @@ const InternshipPortal = () => {
     semester: '',
     session: '',
     program: '',
+    facultyCoordinator: '',
   });
   const [pageSize, setPageSize] = useState(50);
   const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
   const [availablePrograms, setAvailablePrograms] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
     }
 
-    const sampleData = generateSampleInternships(40);
-    
-    const withSessionData = sampleData.map(item => ({
-      ...item,
-      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024',
-      program: ['BTech CSE', 'BTech CSE (FSD)', 'BTech CSE (UI/UX)', 'BTech AI/ML', 'BSc CS', 'BSc DS', 'BSc Cyber', 'BCA', 'BCA (AI/DS)'][Math.floor(Math.random() * 9)]
-    }));
-    
-    const extraColumns = new Set<string>();
-    withSessionData.forEach(item => {
-      Object.keys(item).forEach(key => {
-        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session"].includes(key)) {
-          if (key.startsWith('Attendance')) {
-            extraColumns.add(key);
-          } else {
-            extraColumns.add(key);
-          }
+    // Load real data from Supabase
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const internships = await fetchInternships();
+        
+        if (internships.length === 0) {
+          // Fallback to sample data if no data in Supabase
+          const sampleData = generateSampleInternships(40);
+          const withSessionData = sampleData.map(item => ({
+            ...item,
+            session: Math.random() > 0.5 ? '2024-2025' : '2023-2024',
+            program: ['BTech CSE', 'BTech CSE (FSD)', 'BTech CSE (UI/UX)', 'BTech AI/ML', 'BSc CS', 'BSc DS', 'BSc Cyber', 'BCA', 'BCA (AI/DS)'][Math.floor(Math.random() * 9)]
+          }));
+          
+          setAllInternships(withSessionData);
+          setFilteredInternships(withSessionData);
+          console.log('Using sample data as no data found in Supabase');
+        } else {
+          setAllInternships(internships);
+          setFilteredInternships(internships);
+          console.log('Loaded data from Supabase:', internships.length, 'records');
         }
-      });
-    });
+        
+        // Extract sessions and programs
+        const sessionsSet = new Set<string>();
+        const programsSet = new Set<string>();
+        const columnsSet = new Set<string>();
+        
+        // Process all internships for dynamic data
+        const processedInternships = internships.length > 0 ? internships : allInternships;
+        processedInternships.forEach(item => {
+          if (item.session) sessionsSet.add(item.session);
+          if (item.program) programsSet.add(item.program);
+          
+          // Extract dynamic columns
+          Object.keys(item).forEach(key => {
+            if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session", "isEditing", "isNew"].includes(key)) {
+              if (key.startsWith('Attendance') || !columnsSet.has(key)) {
+                columnsSet.add(key);
+              }
+            }
+          });
+        });
+        
+        setAvailableSessions(Array.from(sessionsSet));
+        setAvailablePrograms(Array.from(programsSet));
+        setDynamicColumns(Array.from(columnsSet));
+      } catch (error) {
+        console.error('Error loading internships:', error);
+        toast.error('Failed to load internship data');
+        
+        // Fallback to sample data on error
+        const sampleData = generateSampleInternships(40);
+        setAllInternships(sampleData);
+        setFilteredInternships(sampleData);
+      } finally {
+        setLoading(false);
+        setIsLoaded(true);
+      }
+    };
     
-    const sessions = new Set<string>();
-    const programs = new Set<string>();
-    
-    withSessionData.forEach(item => {
-      if (item.session) sessions.add(item.session);
-      if (item.program) programs.add(item.program);
-    });
-    
-    setAvailableSessions(Array.from(sessions));
-    setAvailablePrograms(Array.from(programs));
-    setDynamicColumns(Array.from(extraColumns));
-    setAllInternships(withSessionData);
-    setFilteredInternships(withSessionData);
-    
-    setTimeout(() => setIsLoaded(true), 500);
+    loadData();
   }, [isAuthenticated, navigate]);
 
   const handleFilterChange = (filters: Filter) => {
@@ -116,71 +147,80 @@ const InternshipPortal = () => {
     setAllInternships(updatedAllInternships);
   };
 
-  const handleUpload = (entries: InternshipData[], metadata: Filter) => {
-    const newDynamicColumns = new Set<string>(dynamicColumns);
-    
-    entries.forEach(entry => {
-      Object.keys(entry).forEach(key => {
-        if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session", "isEditing", "isNew"].includes(key)) {
-          if (key.startsWith('Attendance') && !dynamicColumns.includes(key)) {
-            newDynamicColumns.add(key);
-          } else if (!dynamicColumns.includes(key)) {
-            newDynamicColumns.add(key);
+  const handleUpload = async (entries: InternshipData[], metadata: Filter) => {
+    try {
+      // First upload to Supabase
+      await uploadMultipleInternships(entries);
+      toast.success(`Successfully saved ${entries.length} entries to database`);
+      
+      const newDynamicColumns = new Set<string>(dynamicColumns);
+      
+      entries.forEach(entry => {
+        Object.keys(entry).forEach(key => {
+          if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session", "isEditing", "isNew"].includes(key)) {
+            if (key.startsWith('Attendance') && !dynamicColumns.includes(key)) {
+              newDynamicColumns.add(key);
+            } else if (!dynamicColumns.includes(key)) {
+              newDynamicColumns.add(key);
+            }
           }
+        });
+      });
+      
+      if (newDynamicColumns.size > dynamicColumns.length) {
+        setDynamicColumns(Array.from(newDynamicColumns));
+      }
+      
+      const sessions = new Set<string>(availableSessions);
+      const programs = new Set<string>(availablePrograms);
+      
+      entries.forEach(item => {
+        if (item.session && !sessions.has(item.session)) {
+          sessions.add(item.session);
+        }
+        if (item.program && !programs.has(item.program)) {
+          programs.add(item.program);
         }
       });
-    });
-    
-    if (newDynamicColumns.size > dynamicColumns.length) {
-      setDynamicColumns(Array.from(newDynamicColumns));
-    }
-    
-    const sessions = new Set<string>(availableSessions);
-    const programs = new Set<string>(availablePrograms);
-    
-    entries.forEach(item => {
-      if (item.session && !sessions.has(item.session)) {
-        sessions.add(item.session);
-      }
-      if (item.program && !programs.has(item.program)) {
-        programs.add(item.program);
-      }
-    });
-    
-    setAvailableSessions(Array.from(sessions));
-    setAvailablePrograms(Array.from(programs));
-    
-    const updatedInternships = [...allInternships];
-    let newEntries = 0;
-    
-    entries.forEach(entry => {
-      const existingIndex = updatedInternships.findIndex(
-        item => item.rollNo === entry.rollNo && item.program === entry.program
-      );
       
-      if (existingIndex >= 0) {
-        updatedInternships[existingIndex] = {
-          ...updatedInternships[existingIndex],
-          ...entry,
-          id: updatedInternships[existingIndex].id
-        };
+      setAvailableSessions(Array.from(sessions));
+      setAvailablePrograms(Array.from(programs));
+      
+      const updatedInternships = [...allInternships];
+      let newEntries = 0;
+      
+      entries.forEach(entry => {
+        const existingIndex = updatedInternships.findIndex(
+          item => item.rollNo === entry.rollNo && item.program === entry.program
+        );
+        
+        if (existingIndex >= 0) {
+          updatedInternships[existingIndex] = {
+            ...updatedInternships[existingIndex],
+            ...entry,
+            id: updatedInternships[existingIndex].id
+          };
+        } else {
+          updatedInternships.push(entry);
+          newEntries++;
+        }
+      });
+      
+      setAllInternships(updatedInternships);
+      
+      if (newEntries > 0) {
+        toast.success(`Added ${newEntries} new entries`);
       } else {
-        updatedInternships.push(entry);
-        newEntries++;
+        toast.success(`Updated ${entries.length} existing entries`);
       }
-    });
-    
-    setAllInternships(updatedInternships);
-    
-    if (newEntries > 0) {
-      toast.success(`Added ${newEntries} new entries`);
-    } else {
-      toast.success(`Updated ${entries.length} existing entries`);
+      
+      const filtered = filterInternships(updatedInternships, metadata);
+      setFilteredInternships(filtered);
+      setCurrentFilters(metadata);
+    } catch (error) {
+      console.error('Error uploading internships to Supabase:', error);
+      toast.error('Failed to upload internships to database');
     }
-    
-    const filtered = filterInternships(updatedInternships, metadata);
-    setFilteredInternships(filtered);
-    setCurrentFilters(metadata);
   };
 
   const handleExportPDF = () => {
@@ -211,16 +251,14 @@ const InternshipPortal = () => {
     }
   };
 
-  const handleFormCreated = (formSettings: any, formUrl: string, embedCode: string) => {
+  const handleFormCreated = (formSettings: any, formUrl: string) => {
     setFormDetails({
       title: formSettings.title,
-      url: formUrl,
-      embedCode
+      url: formUrl
     });
 
     setIsFormLinkDialogOpen(true);
-    
-    console.log('Form created:', { formSettings, formUrl, embedCode });
+    console.log('Form created:', { formSettings, formUrl });
   };
 
   if (!isAuthenticated || !isLoaded) {
@@ -287,22 +325,30 @@ const InternshipPortal = () => {
               onFilterChange={handleFilterChange} 
               availableSessions={availableSessions}
               availablePrograms={availablePrograms}
-              showSemester={false}
-              inlineLayout={true}
+              showFacultyCoordinatorOnly={true}
             />
           </motion.div>
           
           <motion.div>
             <div className="overflow-hidden border border-gray-200 rounded-lg bg-white">
-              <div className="w-full overflow-x-auto">
-                <InternshipTable
-                  data={filteredInternships}
-                  onDataChange={handleDataChange}
-                  pageSize={pageSize}
-                  onPageSizeChange={setPageSize}
-                  dynamicColumns={dynamicColumns}
-                />
-              </div>
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-pulse flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-full bg-brand-blue/20 mb-4" />
+                    <div className="h-2 w-24 bg-brand-blue/20 rounded-full" />
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full overflow-x-auto">
+                  <InternshipTable
+                    data={filteredInternships}
+                    onDataChange={handleDataChange}
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                    dynamicColumns={dynamicColumns}
+                  />
+                </div>
+              )}
             </div>
           </motion.div>
         </motion.div>
@@ -328,7 +374,6 @@ const InternshipPortal = () => {
         onClose={() => setIsFormLinkDialogOpen(false)}
         formTitle={formDetails.title}
         formUrl={formDetails.url}
-        embedCode={formDetails.embedCode}
       />
     </div>
   );
