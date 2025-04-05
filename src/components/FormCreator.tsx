@@ -44,7 +44,7 @@ const internshipBaseFields = [
 ];
 
 const projectPdfFields = ['form', 'presentation', 'report'];
-const internshipPdfFields = ['noc', 'offerLetter', 'pop'];
+const internshipPdfFields = ['noc', 'offerLetter'];
 
 const fieldLabels: Record<string, string> = {
   groupNo: 'Group Number',
@@ -64,8 +64,7 @@ const fieldLabels: Record<string, string> = {
   presentation: 'Presentation',
   report: 'Report',
   noc: 'NOC',
-  offerLetter: 'Offer Letter',
-  pop: 'Proof of Participation'
+  offerLetter: 'Offer Letter'
 };
 
 const formSchema = z.object({
