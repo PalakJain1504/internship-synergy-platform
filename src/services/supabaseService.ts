@@ -3,9 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { ProjectData, Filter, InternshipData, ProjectEntry, InternshipEntry } from '@/lib/types';
 
 // Initialize Supabase client
-// Replace these with your actual Supabase credentials
-const supabaseUrl = 'https://your-supabase-project.supabase.co';
-const supabaseKey = 'your-supabase-anon-key';
+
+// Note: In a real app, these would be environment variables
+const supabaseUrl = 'https://zslbfvtqqzwxiwmbzpdw.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzbGJmdnRxcXp3eGl3bWJ6cGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI2MzYzOTcsImV4cCI6MjA1ODIxMjM5N30.DpJ76e3anHUJ3aPypyj2jsiXcbRv6Mjh_BMipmtQHCU';
+
+
 
 // Create a client with your Supabase credentials
 const supabase = createClient(supabaseUrl, supabaseKey);

@@ -3,8 +3,8 @@ import { FormSettings } from '@/lib/types';
 import { toast } from 'sonner';
 
 // Configuration for Google API
-const API_KEY = "YOUR_GOOGLE_API_KEY"; // Replace with your actual API key
-const CLIENT_ID = "YOUR_CLIENT_ID"; // Replace with your client ID
+const API_KEY = "AIzaSyBZUkRzHy0hbdBSqi3yVWnAtS70IsMK9Vc"; // Replace with your actual API key
+const CLIENT_ID = "397462943494-no3ee8d9gvq1gg5q9s69a930ii3mlacb.apps.googleusercontent.com"; // Replace with your client ID
 const DISCOVERY_DOCS = ["https://forms.googleapis.com/$discovery/rest?version=v1"];
 const SCOPES = "https://www.googleapis.com/auth/forms.body https://www.googleapis.com/auth/drive.file";
 const REDIRECT_URI = "http://localhost:8080/oauth2callback"; // For local development
