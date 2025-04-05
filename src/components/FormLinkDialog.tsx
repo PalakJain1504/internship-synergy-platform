@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Copy, ExternalLink, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 
 interface FormLinkDialogProps {
@@ -32,7 +31,6 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
   embedCode,
 }) => {
   const [copyLinkStatus, setCopyLinkStatus] = useState<'idle' | 'copied'>('idle');
-  const [copyEmbedStatus, setCopyEmbedStatus] = useState<'idle' | 'copied'>('idle');
 
   const handleCopyLink = async () => {
     try {
@@ -45,20 +43,6 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
     } catch (error) {
       console.error('Failed to copy link:', error);
       toast.error('Failed to copy link. Please try manually selecting and copying.');
-    }
-  };
-
-  const handleCopyEmbed = async () => {
-    try {
-      await navigator.clipboard.writeText(embedCode);
-      setCopyEmbedStatus('copied');
-      toast.success('Embed code copied to clipboard');
-      
-      // Reset after 2 seconds
-      setTimeout(() => setCopyEmbedStatus('idle'), 2000);
-    } catch (error) {
-      console.error('Failed to copy embed code:', error);
-      toast.error('Failed to copy embed code. Please try manually selecting and copying.');
     }
   };
 
@@ -81,7 +65,7 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Form Created Successfully</DialogTitle>
           <DialogDescription>
-            Your form "{formTitle}" has been created. You can share the link or embed it in your website.
+            Your form "{formTitle}" has been created. You can share the link with students.
           </DialogDescription>
         </DialogHeader>
 
@@ -105,28 +89,6 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
             </div>
             <p className="text-xs text-muted-foreground">
               Share this link with students to allow them to submit their information.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="embed-code">Embed Code</Label>
-            <div className="flex items-stretch gap-2">
-              <Textarea
-                id="embed-code"
-                value={embedCode}
-                readOnly
-                className="flex-1 h-24 font-mono text-xs"
-              />
-              <Button variant="outline" size="icon" onClick={handleCopyEmbed} className="self-start">
-                {copyEmbedStatus === 'copied' ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Copy this code to embed the form in your website or learning management system.
             </p>
           </div>
         </div>
