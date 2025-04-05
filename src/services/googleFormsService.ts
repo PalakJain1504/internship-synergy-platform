@@ -19,9 +19,9 @@ declare global {
 }
 
 // Replace with your Google API credentials - make sure these match your Google Cloud setup
-const API_KEY = 'AIzaSyBZUkRzHy0hbdBSqi3yVWnAtS70IsMK9Vc'; // Your API key
-const CLIENT_ID = '397462943494-no3ee8d9gvq1gg5q9s69a930ii3mlacb.apps.googleusercontent.com'; // Your OAuth 2.0 client ID
-const REDIRECT_URI = window.location.origin + '/oauth2callback'; // Dynamic redirect URI
+const API_KEY = 'AIzaSyD2KHlyBMQajN4wETJqqDIobBJnQH6wWoY'; // Your API key
+const CLIENT_ID = '397462943494-fj4js6snhvf8q3aljits3e6jvp6oui4h.apps.googleusercontent.com'; // Your OAuth 2.0 client ID
+const REDIRECT_URI = 'http://localhost:8080/oauth2callback'; // Dynamic redirect URI
 
 // The API Discovery Document
 const DISCOVERY_DOCS = ["https://forms.googleapis.com/$discovery/rest?version=v1"];
