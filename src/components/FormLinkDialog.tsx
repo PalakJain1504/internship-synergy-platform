@@ -20,7 +20,6 @@ interface FormLinkDialogProps {
   onClose: () => void;
   formTitle: string;
   formUrl: string;
-  embedCode: string;
 }
 
 const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
@@ -28,7 +27,6 @@ const FormLinkDialog: React.FC<FormLinkDialogProps> = ({
   onClose,
   formTitle,
   formUrl,
-  embedCode,
 }) => {
   const [copyLinkStatus, setCopyLinkStatus] = useState<'idle' | 'copied'>('idle');
 

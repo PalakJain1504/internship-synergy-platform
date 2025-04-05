@@ -7,31 +7,55 @@ const API_KEY = "YOUR_GOOGLE_API_KEY"; // Replace with your actual API key
 const CLIENT_ID = "YOUR_CLIENT_ID"; // Replace with your client ID
 const DISCOVERY_DOCS = ["https://forms.googleapis.com/$discovery/rest?version=v1"];
 const SCOPES = "https://www.googleapis.com/auth/forms.body https://www.googleapis.com/auth/drive.file";
+const REDIRECT_URI = "http://localhost:8080/oauth2callback"; // For local development
 
 interface GoogleFormResponse {
   formId: string;
   formUrl: string;
   editUrl: string;
-  embedCode: string;
 }
 
 // Initialize Google API client
 let gApiInitialized = false;
+let gapiPromise: Promise<void> | null = null;
+
+// Load gapi script once
+function loadGapiScript(): Promise<void> {
+  if (gapiPromise) return gapiPromise;
+  
+  gapiPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = () => {
+      resolve();
+    };
+    script.onerror = () => {
+      reject(new Error('Failed to load Google API script'));
+    };
+    document.body.appendChild(script);
+  });
+  
+  return gapiPromise;
+}
 
 async function initGoogleApi(): Promise<boolean> {
   // If already initialized, return true
   if (gApiInitialized) return true;
   
-  return new Promise((resolve) => {
-    // This function will be called by the Google API script when loaded
-    window.gApiLoaded = () => {
-      gapi.load('client:auth2', async () => {
+  try {
+    // Load the gapi script first
+    await loadGapiScript();
+    
+    // Then load the client and auth2 libraries
+    return new Promise((resolve) => {
+      window.gapi.load('client:auth2', async () => {
         try {
-          await gapi.client.init({
+          await window.gapi.client.init({
             apiKey: API_KEY,
             clientId: CLIENT_ID,
             discoveryDocs: DISCOVERY_DOCS,
-            scope: SCOPES
+            scope: SCOPES,
+            redirect_uri: REDIRECT_URI
           });
           
           gApiInitialized = true;
@@ -41,23 +65,11 @@ async function initGoogleApi(): Promise<boolean> {
           resolve(false);
         }
       });
-    };
-    
-    // Add Google API script if not already added
-    if (!document.getElementById('google-api-script')) {
-      const script = document.createElement('script');
-      script.id = 'google-api-script';
-      script.src = 'https://apis.google.com/js/api.js?onload=gApiLoaded';
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-    } else {
-      // If script is already added, but not initialized, try to initialize directly
-      if (window.gapi) {
-        window.gApiLoaded();
-      }
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Error loading Google API script:', error);
+    return false;
+  }
 }
 
 // Check if user is signed in to Google
@@ -67,7 +79,7 @@ async function checkSignInStatus(): Promise<boolean> {
     if (!initialized) return false;
   }
   
-  const isSignedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
+  const isSignedIn = window.gapi.auth2.getAuthInstance().isSignedIn.get();
   return isSignedIn;
 }
 
@@ -82,11 +94,28 @@ async function signInToGoogle(): Promise<boolean> {
   }
   
   try {
-    const authResponse = await gapi.auth2.getAuthInstance().signIn();
+    const authResponse = await window.gapi.auth2.getAuthInstance().signIn({
+      ux_mode: 'redirect',
+      redirect_uri: REDIRECT_URI
+    });
     return !!authResponse;
   } catch (error) {
     console.error('Error signing in to Google:', error);
     return false;
+  }
+}
+
+// Handle the OAuth callback
+export function handleOAuthCallback(): void {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  
+  if (code) {
+    console.log('Auth code received:', code);
+    toast.success('Successfully authenticated with Google');
+    // Exchange the code for tokens would happen here
+    // For now we'll just redirect back to the home page
+    window.location.href = '/home';
   }
 }
 
@@ -116,13 +145,10 @@ export async function createGoogleForm(formSettings: FormSettings): Promise<Goog
     const formUrl = `https://docs.google.com/forms/d/e/${formId}/viewform`;
     const editUrl = `https://docs.google.com/forms/d/e/${formId}/edit`;
     
-    // Create an embed code that matches Google Forms embed format
-    const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="1000" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
-    
     // Note: In a real implementation, you would use the Google Forms API to create the form
     // Example of how this might look:
     /*
-    const form = await gapi.client.forms.forms.create({
+    const form = await window.gapi.client.forms.forms.create({
       info: {
         title: formSettings.title,
         documentTitle: formSettings.title
@@ -132,14 +158,12 @@ export async function createGoogleForm(formSettings: FormSettings): Promise<Goog
     const formId = form.result.formId;
     const formUrl = `https://docs.google.com/forms/d/e/${formId}/viewform`;
     const editUrl = `https://docs.google.com/forms/d/e/${formId}/edit`;
-    const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="1000" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
     */
     
     return {
       formId,
       formUrl,
-      editUrl,
-      embedCode
+      editUrl
     };
   } catch (error) {
     console.error('Error creating Google Form:', error);
@@ -163,7 +187,7 @@ export async function addFormQuestions(formId: string, formSettings: FormSetting
     /*
     // Add text questions for each selected field
     for (const field of formSettings.includeFields) {
-      await gapi.client.forms.forms.batchUpdate({
+      await window.gapi.client.forms.forms.batchUpdate({
         formId: formId,
         requests: [
           {
@@ -188,7 +212,7 @@ export async function addFormQuestions(formId: string, formSettings: FormSetting
     
     // Add file upload questions for each PDF field
     for (const field of formSettings.pdfFields) {
-      await gapi.client.forms.forms.batchUpdate({
+      await window.gapi.client.forms.forms.batchUpdate({
         formId: formId,
         requests: [
           {
@@ -248,7 +272,7 @@ export async function getFormResponses(formId: string): Promise<any[]> {
     // Note: In a real implementation, you would use the Google Forms API to get responses
     // Example of how this might look:
     /*
-    const response = await gapi.client.forms.forms.responses.list({
+    const response = await window.gapi.client.forms.forms.responses.list({
       formId: formId
     });
     
@@ -264,6 +288,6 @@ export async function getFormResponses(formId: string): Promise<any[]> {
 declare global {
   interface Window {
     gapi: any;
-    gApiLoaded: () => void;
+    gapiLoaded?: () => void;
   }
 }

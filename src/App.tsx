@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import ProjectPortal from "./pages/ProjectPortal";
 import InternshipPortal from "./pages/InternshipPortal";
+import OAuth2Callback from "./pages/OAuth2Callback";
 import { AuthProvider } from "./context/AuthContext";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => {
             <Route path="/home" element={<Home />} />
             <Route path="/project-portal" element={<ProjectPortal />} />
             <Route path="/internship-portal" element={<InternshipPortal />} />
+            <Route path="/oauth2callback" element={<OAuth2Callback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
