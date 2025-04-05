@@ -19,8 +19,8 @@ declare global {
 }
 
 // Replace with your Google API credentials
-const API_KEY = 'AIzaSyD9eLOqZvozUqUSwpE-4dxM0xjcUWMJXk0'; // Your API key
-const CLIENT_ID = '389839541825-v1ht4ilmbqqb1vq25fmg1q33h6n9ej5k.apps.googleusercontent.com'; // Your OAuth 2.0 client ID
+const API_KEY = 'AIzaSyBZUkRzHy0hbdBSqi3yVWnAtS70IsMK9Vc'; // Your API key
+const CLIENT_ID = '397462943494-no3ee8d9gvq1gg5q9s69a930ii3mlacb.apps.googleusercontent.com'; // Your OAuth 2.0 client ID
 const REDIRECT_URI = 'http://localhost:8080/oauth2callback'; // Must match what's configured in Google Cloud Console
 
 // The API Discovery Document
