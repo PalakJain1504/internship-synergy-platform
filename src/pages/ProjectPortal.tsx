@@ -164,12 +164,11 @@ const ProjectPortal = () => {
     setFormDetails({
       title: formSettings.title,
       url: formUrl,
-      embedCode
     });
 
     setIsFormLinkDialogOpen(true);
     
-    console.log('Form created:', { formSettings, formUrl, embedCode });
+    console.log('Form created:', { formSettings, formUrl });
   };
 
   if (!isAuthenticated || !isLoaded) {
@@ -293,7 +292,6 @@ const ProjectPortal = () => {
         onClose={() => setIsFormLinkDialogOpen(false)}
         formTitle={formDetails.title}
         formUrl={formDetails.url}
-        embedCode={formDetails.embedCode}
       />
     </div>
   );

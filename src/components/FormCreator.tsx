@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -35,7 +34,6 @@ interface FormCreatorProps {
   onFormCreated: (formSettings: FormSettings, formUrl: string, embedCode: string) => void;
 }
 
-// Define base fields for each portal type
 const projectBaseFields = [
   'groupNo', 'rollNo', 'name', 'email', 'phoneNo', 'title', 
   'domain', 'facultyMentor', 'industryMentor', 'facultyCoordinator'
@@ -45,7 +43,6 @@ const internshipBaseFields = [
   'rollNo', 'name', 'program', 'organization', 'dates'
 ];
 
-// Define PDF fields for each portal type
 const projectPdfFields = ['form', 'presentation', 'report'];
 const internshipPdfFields = ['noc', 'offerLetter', 'pop'];
 
@@ -71,7 +68,6 @@ const fieldLabels: Record<string, string> = {
   pop: 'Proof of Participation'
 };
 
-// Define form validation schema
 const formSchema = z.object({
   title: z.string().min(1, "Form title is required"),
   session: z.string().min(1, "Session is required"),
@@ -89,7 +85,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
   portalType, 
   onFormCreated
 }) => {
-  // Set up form with validation
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -104,7 +99,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
     },
   });
 
-  // Setup state for fields
   const baseFields = portalType === 'project' ? projectBaseFields : internshipBaseFields;
   const pdfFields = portalType === 'project' ? projectPdfFields : internshipPdfFields;
   
@@ -114,11 +108,9 @@ const FormCreator: React.FC<FormCreatorProps> = ({
   const [newCustomField, setNewCustomField] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Handle adding custom field
   const addCustomField = () => {
     if (!newCustomField.trim()) return;
 
-    // Check if field already exists
     if ([...baseFields, ...customFields].includes(newCustomField)) {
       toast.error('This field already exists');
       return;
@@ -129,7 +121,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
     setNewCustomField('');
   };
 
-  // Handle toggling fields
   const toggleField = (field: string) => {
     if (selectedFields.includes(field)) {
       setSelectedFields(selectedFields.filter(f => f !== field));
@@ -138,7 +129,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
     }
   };
 
-  // Handle toggling PDF fields
   const togglePdfField = (field: string) => {
     if (selectedPdfFields.includes(field)) {
       setSelectedPdfFields(selectedPdfFields.filter(f => f !== field));
@@ -147,7 +137,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
     }
   };
 
-  // Handle form submission
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (selectedFields.length === 0) {
       toast.error('Please select at least one field');
@@ -175,7 +164,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Create form settings
       const formSettings: FormSettings = {
         portalType,
         title: values.title,
@@ -190,22 +178,20 @@ const FormCreator: React.FC<FormCreatorProps> = ({
         customFields,
       };
 
-      // Call the Google Forms API service
       const response = await createGoogleForm(formSettings);
 
       if (!response) {
         toast.error('Failed to create form');
+        setIsSubmitting(false);
         return;
       }
 
-      // Add questions to the form
       const questionsAdded = await addFormQuestions(response.formId, formSettings);
 
       if (!questionsAdded) {
         toast.warning('Form created but some questions may not have been added');
       }
 
-      // Notify success
       toast.success('Form created successfully!');
       onFormCreated(formSettings, response.formUrl, response.embedCode);
       onClose();
@@ -229,7 +215,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Form Basic Info Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -302,7 +287,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
               />
             </div>
             
-            {/* Group Size Section - Only for Project Portal */}
             {portalType === 'project' && (
               <div className="border rounded-md p-4 bg-gray-50">
                 <h3 className="text-base font-medium mb-3">Group Configuration</h3>
@@ -348,7 +332,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
               </div>
             )}
             
-            {/* Field Selection Section */}
             <div>
               <h3 className="text-base font-medium mb-2">Base Fields</h3>
               <div className="border rounded-md p-4 bg-gray-50">
@@ -367,7 +350,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
               </div>
             </div>
             
-            {/* PDF Fields Section */}
             <div>
               <h3 className="text-base font-medium mb-2">PDF File Upload Fields</h3>
               <div className="border rounded-md p-4 bg-gray-50">
@@ -386,7 +368,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({
               </div>
             </div>
             
-            {/* Custom Fields Section */}
             <div>
               <h3 className="text-base font-medium mb-2">Custom Fields</h3>
               <div className="border rounded-md p-4 bg-gray-50">

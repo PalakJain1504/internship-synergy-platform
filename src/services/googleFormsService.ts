@@ -9,10 +9,11 @@ const DISCOVERY_DOCS = ["https://forms.googleapis.com/$discovery/rest?version=v1
 const SCOPES = "https://www.googleapis.com/auth/forms.body https://www.googleapis.com/auth/drive.file";
 const REDIRECT_URI = "http://localhost:8080/oauth2callback"; // For local development
 
-interface GoogleFormResponse {
+export interface GoogleFormResponse {
   formId: string;
   formUrl: string;
   editUrl: string;
+  embedCode: string; // Adding embedCode to the response type
 }
 
 // Initialize Google API client
@@ -79,8 +80,13 @@ async function checkSignInStatus(): Promise<boolean> {
     if (!initialized) return false;
   }
   
-  const isSignedIn = window.gapi.auth2.getAuthInstance().isSignedIn.get();
-  return isSignedIn;
+  try {
+    const isSignedIn = window.gapi.auth2.getAuthInstance().isSignedIn.get();
+    return isSignedIn;
+  } catch (error) {
+    console.error('Error checking sign-in status:', error);
+    return false;
+  }
 }
 
 // Sign in to Google
@@ -101,6 +107,7 @@ async function signInToGoogle(): Promise<boolean> {
     return !!authResponse;
   } catch (error) {
     console.error('Error signing in to Google:', error);
+    toast.error('Google sign-in failed or was cancelled by the user.');
     return false;
   }
 }
@@ -115,12 +122,14 @@ export function handleOAuthCallback(): void {
     toast.success('Successfully authenticated with Google');
     // Exchange the code for tokens would happen here
     // For now we'll just redirect back to the home page
-    window.location.href = '/home';
+    window.location.href = '/project-portal';
   }
 }
 
 export async function createGoogleForm(formSettings: FormSettings): Promise<GoogleFormResponse | null> {
   try {
+    console.log('Creating form with settings:', formSettings);
+    
     // Check if user is signed in
     const isSignedIn = await checkSignInStatus();
     if (!isSignedIn) {
@@ -145,6 +154,9 @@ export async function createGoogleForm(formSettings: FormSettings): Promise<Goog
     const formUrl = `https://docs.google.com/forms/d/e/${formId}/viewform`;
     const editUrl = `https://docs.google.com/forms/d/e/${formId}/edit`;
     
+    // Generate embed code (this would be provided by Google Forms API in a real implementation)
+    const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="800" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
+    
     // Note: In a real implementation, you would use the Google Forms API to create the form
     // Example of how this might look:
     /*
@@ -158,12 +170,14 @@ export async function createGoogleForm(formSettings: FormSettings): Promise<Goog
     const formId = form.result.formId;
     const formUrl = `https://docs.google.com/forms/d/e/${formId}/viewform`;
     const editUrl = `https://docs.google.com/forms/d/e/${formId}/edit`;
+    const embedCode = `<iframe src="${formUrl}?embedded=true" width="640" height="800" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
     */
     
     return {
       formId,
       formUrl,
-      editUrl
+      editUrl,
+      embedCode
     };
   } catch (error) {
     console.error('Error creating Google Form:', error);
