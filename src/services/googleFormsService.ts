@@ -2,6 +2,21 @@
 // Google Forms Service
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
+import { FormSettings } from '@/lib/types';
+
+// Add TypeScript declarations for Google API
+declare global {
+  interface Window {
+    gapi: any;
+    google: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: any) => any;
+        };
+      };
+    };
+  }
+}
 
 // Replace with your Google API credentials
 const API_KEY = 'AIzaSyD9eLOqZvozUqUSwpE-4dxM0xjcUWMJXk0'; // Your API key
@@ -152,7 +167,7 @@ export const authenticateWithGoogle = async (): Promise<boolean> => {
 };
 
 // Create a Google Form
-export const createGoogleForm = async (formSettings: any): Promise<{ url: string } | null> => {
+export const createGoogleForm = async (formSettings: FormSettings): Promise<{ url: string } | null> => {
   if (!gapiInitialized) {
     await initGoogleApi();
   }
@@ -417,5 +432,25 @@ export const createGoogleForm = async (formSettings: any): Promise<{ url: string
     console.error('Error creating Google Form:', error);
     toast.error('Failed to create Google Form');
     return null;
+  }
+};
+
+// Add the missing addFormQuestions function
+export const addFormQuestions = async (formId: string, formSettings: FormSettings): Promise<boolean> => {
+  if (!gapiInitialized) {
+    await initGoogleApi();
+  }
+
+  try {
+    console.log(`Adding questions to form: ${formId}`);
+    
+    // This function is a stub that simply returns true for now
+    // In a real implementation, this would add additional questions to an existing form
+    // We're returning true here since the createGoogleForm already handles adding questions
+    
+    return true;
+  } catch (error) {
+    console.error('Error adding questions to form:', error);
+    return false;
   }
 };

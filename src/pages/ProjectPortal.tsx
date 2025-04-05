@@ -21,7 +21,7 @@ const ProjectPortal = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isFormCreatorOpen, setIsFormCreatorOpen] = useState(false);
   const [isFormLinkDialogOpen, setIsFormLinkDialogOpen] = useState(false);
-  const [formDetails, setFormDetails] = useState({ title: '', url: '', embedCode: '' });
+  const [formDetails, setFormDetails] = useState({ title: '', url: '' });
   const [allProjects, setAllProjects] = useState<ProjectData[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<ProjectData[]>([]);
   const [currentFilters, setCurrentFilters] = useState<Filter>({
@@ -160,7 +160,7 @@ const ProjectPortal = () => {
     toast.success('PDF exported successfully');
   };
 
-  const handleFormCreated = (formSettings: any, formUrl: string, embedCode: string) => {
+  const handleFormCreated = (formSettings: any, formUrl: string) => {
     setFormDetails({
       title: formSettings.title,
       url: formUrl,

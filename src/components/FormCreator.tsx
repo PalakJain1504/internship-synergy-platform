@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus, X, FileText, ClipboardCheck, Loader2 } from 'lucide-react';
+import { Plus, X, FileText, Loader2 } from 'lucide-react';
 import { FormSettings } from '@/lib/types';
 import { createGoogleForm, addFormQuestions } from '@/services/googleFormsService';
 
@@ -31,7 +31,7 @@ interface FormCreatorProps {
   isOpen: boolean;
   onClose: () => void;
   portalType: 'project' | 'internship';
-  onFormCreated: (formSettings: FormSettings, formUrl: string, embedCode: string) => void;
+  onFormCreated: (formSettings: FormSettings, formUrl: string) => void;
 }
 
 const projectBaseFields = [
@@ -186,14 +186,8 @@ const FormCreator: React.FC<FormCreatorProps> = ({
         return;
       }
 
-      const questionsAdded = await addFormQuestions(response.formId, formSettings);
-
-      if (!questionsAdded) {
-        toast.warning('Form created but some questions may not have been added');
-      }
-
       toast.success('Form created successfully!');
-      onFormCreated(formSettings, response.formUrl, response.embedCode);
+      onFormCreated(formSettings, response.url);
       onClose();
     } catch (error) {
       console.error('Error creating form:', error);

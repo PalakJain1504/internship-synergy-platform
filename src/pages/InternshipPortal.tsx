@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -44,14 +43,12 @@ const InternshipPortal = () => {
       navigate('/login');
     }
 
-    // Load real data from Supabase
     const loadData = async () => {
       try {
         setLoading(true);
         const internships = await fetchInternships();
         
         if (internships.length === 0) {
-          // Fallback to sample data if no data in Supabase
           const sampleData = generateSampleInternships(40);
           const withSessionData = sampleData.map(item => ({
             ...item,
@@ -68,18 +65,15 @@ const InternshipPortal = () => {
           console.log('Loaded data from Supabase:', internships.length, 'records');
         }
         
-        // Extract sessions and programs
         const sessionsSet = new Set<string>();
         const programsSet = new Set<string>();
         const columnsSet = new Set<string>();
         
-        // Process all internships for dynamic data
         const processedInternships = internships.length > 0 ? internships : allInternships;
         processedInternships.forEach(item => {
           if (item.session) sessionsSet.add(item.session);
           if (item.program) programsSet.add(item.program);
           
-          // Extract dynamic columns
           Object.keys(item).forEach(key => {
             if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session", "isEditing", "isNew"].includes(key)) {
               if (key.startsWith('Attendance') || !columnsSet.has(key)) {
@@ -96,7 +90,6 @@ const InternshipPortal = () => {
         console.error('Error loading internships:', error);
         toast.error('Failed to load internship data');
         
-        // Fallback to sample data on error
         const sampleData = generateSampleInternships(40);
         setAllInternships(sampleData);
         setFilteredInternships(sampleData);
@@ -149,7 +142,6 @@ const InternshipPortal = () => {
 
   const handleUpload = async (entries: InternshipData[], metadata: Filter) => {
     try {
-      // First upload to Supabase
       await uploadMultipleInternships(entries);
       toast.success(`Successfully saved ${entries.length} entries to database`);
       
