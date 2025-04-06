@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -318,7 +317,7 @@ const InternshipPortal = () => {
               onFilterChange={handleFilterChange} 
               availableSessions={availableSessions}
               availablePrograms={availablePrograms}
-              showFacultyCoordinatorOnly={false}
+              showFacultyCoordinatorOnly={false} // Set to false to show Session, Year, Program filters
             />
           </motion.div>
           
@@ -352,7 +351,7 @@ const InternshipPortal = () => {
         onClose={() => setIsUploadModalOpen(false)}
         onUpload={(entries, metadata) => handleUpload(entries as InternshipData[], metadata)}
         portalType="internship"
-        showOnlyFacultyCoordinator={true}
+        showOnlyFacultyCoordinator={true} // Keep only Faculty Coordinator in upload modal
       />
       
       <FormCreator

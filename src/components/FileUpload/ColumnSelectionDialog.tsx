@@ -1,24 +1,16 @@
 
 import React from 'react';
-import { PlusCircle, FileText } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 interface ColumnSelectionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   showCustomInput: boolean;
   customColumnName: string;
-  onCustomColumnNameChange: (name: string) => void;
+  onCustomColumnNameChange: (value: string) => void;
   onColumnSelect: (columnType: string) => void;
   onBackClick: () => void;
   onCustomColumnSubmit: () => void;
@@ -34,90 +26,101 @@ const ColumnSelectionDialog: React.FC<ColumnSelectionDialogProps> = ({
   onColumnSelect,
   onBackClick,
   onCustomColumnSubmit,
-  portalType
+  portalType,
 }) => {
-  const getColumnOptions = () => {
-    if (portalType === 'project') {
-      return [
-        { value: 'form', label: 'Form' },
-        { value: 'presentation', label: 'Presentation' },
-        { value: 'report', label: 'Report' },
-        { value: 'custom', label: 'Add New Column...' }
-      ];
-    } else {
-      return [
-        { value: 'noc', label: 'NOC' },
-        { value: 'offerLetter', label: 'Offer Letter' },
-        { value: 'pop', label: 'PoP' },
-        { value: 'attendance', label: 'Attendance' },
-        { value: 'custom', label: 'Add New Column...' }
-      ];
-    }
-  };
+  if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Select Document Column</DialogTitle>
-          <DialogDescription>
-            Choose which column this document should be linked to
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          {showCustomInput ? (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 animate-scale-in">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {showCustomInput ? (
+              <button
+                onClick={onBackClick}
+                className="mr-2 p-1 hover:bg-gray-100 rounded-full"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            ) : null}
+            {showCustomInput ? 'Enter Custom Column Name' : 'Select Column Type'}
+          </h2>
+          <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500">
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {showCustomInput ? (
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="customColumn">Custom Column Name</Label>
+              <Label htmlFor="customColumnName">Column Name</Label>
               <Input
-                id="customColumn"
-                placeholder="Enter column name..."
+                id="customColumnName"
+                placeholder="e.g., Certificate, Review, etc."
                 value={customColumnName}
                 onChange={(e) => onCustomColumnNameChange(e.target.value)}
+                autoFocus
               />
-              <p className="text-xs text-gray-500">
-                This will create a new column in the table
-              </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {getColumnOptions().map(option => (
-                <Button
-                  key={option.value}
-                  variant="outline"
-                  className="justify-start"
-                  onClick={() => onColumnSelect(option.value)}
-                >
-                  {option.value === 'custom' && <PlusCircle className="h-4 w-4 mr-2" />}
-                  {option.value === 'attendance' && <FileText className="h-4 w-4 mr-2 text-blue-500" />}
-                  {option.label}
+            <Button
+              className="w-full"
+              onClick={onCustomColumnSubmit}
+              disabled={!customColumnName.trim()}
+            >
+              Save
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {portalType === 'project' ? (
+              <>
+                <Button variant="outline" className="h-auto py-3 flex flex-col items-center" onClick={() => onColumnSelect('form')}>
+                  <span className="text-sm font-medium">Form</span>
+                  <span className="text-xs text-gray-500 mt-1">Project Proposal</span>
                 </Button>
-              ))}
-            </div>
-          )}
-        </div>
-        
-        <DialogFooter className="sm:justify-between">
-          {showCustomInput && (
-            <>
-              <Button 
-                variant="secondary" 
-                onClick={onBackClick}
-              >
-                Back
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={!customColumnName.trim()} 
-                onClick={onCustomColumnSubmit}
-              >
-                Add Column
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                
+                <Button variant="outline" className="h-auto py-3 flex flex-col items-center" onClick={() => onColumnSelect('presentation')}>
+                  <span className="text-sm font-medium">Presentation</span>
+                  <span className="text-xs text-gray-500 mt-1">Final Slides</span>
+                </Button>
+                
+                <Button variant="outline" className="h-auto py-3 flex flex-col items-center" onClick={() => onColumnSelect('report')}>
+                  <span className="text-sm font-medium">Report</span>
+                  <span className="text-xs text-gray-500 mt-1">Project Documentation</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" className="h-auto py-3 flex flex-col items-center" onClick={() => onColumnSelect('noc')}>
+                  <span className="text-sm font-medium">NOC</span>
+                  <span className="text-xs text-gray-500 mt-1">No Objection Certificate</span>
+                </Button>
+                
+                <Button variant="outline" className="h-auto py-3 flex flex-col items-center" onClick={() => onColumnSelect('offerLetter')}>
+                  <span className="text-sm font-medium">Offer Letter</span>
+                  <span className="text-xs text-gray-500 mt-1">Internship Confirmation</span>
+                </Button>
+                
+                <Button variant="outline" className="h-auto py-3 flex flex-col items-center" onClick={() => onColumnSelect('pop')}>
+                  <span className="text-sm font-medium">PoP</span>
+                  <span className="text-xs text-gray-500 mt-1">Proof of Participation</span>
+                </Button>
+              </>
+            )}
+            
+            <Button variant="outline" className="h-auto py-3 flex flex-col items-center" onClick={() => onColumnSelect('attendance')}>
+              <span className="text-sm font-medium">Attendance</span>
+              <span className="text-xs text-gray-500 mt-1">Monthly Record</span>
+            </Button>
+            
+            <Button variant="outline" className="h-auto py-3 flex flex-col items-center col-span-2" onClick={() => onColumnSelect('custom')}>
+              <span className="text-sm font-medium">Custom Column</span>
+              <span className="text-xs text-gray-500 mt-1">Define Your Own</span>
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

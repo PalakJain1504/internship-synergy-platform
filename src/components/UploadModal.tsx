@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import {
 import { toast } from 'sonner';
 import { Filter, ProjectData, InternshipData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import ExcelFormatGuide from '@/components/FileUpload/ExcelFormatGuide';
 import * as XLSX from 'xlsx';
 
 interface UploadModalProps {
@@ -369,13 +371,15 @@ const UploadModal: React.FC<UploadModalProps> = ({
       return;
     }
     
-    if (!metadata.year || !metadata.session) {
-      toast.error('Please fill in all required metadata fields (year, session)');
+    // For internship portal, only faculty coordinator is required
+    if (portalType === 'internship' && !metadata.facultyCoordinator) {
+      toast.error('Please select a Faculty Coordinator');
       return;
     }
     
-    if (portalType === 'project' && !metadata.semester) {
-      toast.error('Please select a semester');
+    // For project portal, more fields are required
+    if (portalType === 'project' && (!metadata.year || !metadata.session || !metadata.semester)) {
+      toast.error('Please fill in all required metadata fields (year, session, semester)');
       return;
     }
 
@@ -556,7 +560,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Error during upload:', error);
-      toast.error('Failed to upload Excel data');
+      toast.error('Failed to upload data. Please check the console for details.');
       setIsUploading(false);
     }
   };
@@ -574,6 +578,9 @@ const UploadModal: React.FC<UploadModalProps> = ({
         </div>
 
         <div className="space-y-6">
+          {/* Add Excel Format Guide */}
+          <ExcelFormatGuide portalType={portalType} />
+          
           <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
             {file ? (
               <div className="flex items-center justify-center space-x-3">

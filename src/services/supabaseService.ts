@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { ProjectData, Filter, InternshipData, ProjectEntry, InternshipEntry } from '@/lib/types';
 
@@ -346,7 +347,7 @@ export async function uploadMultipleInternships(internships: InternshipEntry[]) 
     const dbInternships = internships.map(internshipToDbFormat);
     
     // Process in smaller batches to avoid potential size limitations
-    const BATCH_SIZE = 20;
+    const BATCH_SIZE = 10; // Reduced batch size for better reliability
     const batches = [];
     
     for (let i = 0; i < dbInternships.length; i += BATCH_SIZE) {
@@ -355,25 +356,61 @@ export async function uploadMultipleInternships(internships: InternshipEntry[]) 
     
     console.log(`Split into ${batches.length} batches of max ${BATCH_SIZE} records each`);
     
+    let totalProcessed = 0;
+    let successCount = 0;
+    
     // Process each batch
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
       console.log(`Processing batch ${i+1}/${batches.length} with ${batch.length} records`);
       
-      const { data, error } = await supabase
-        .from('internships')
-        .insert(batch)
-        .select(); // Add select to get returned data
-      
-      if (error) {
-        console.error(`Error uploading batch ${i+1}:`, error);
-        throw error;
+      try {
+        const { data, error } = await supabase
+          .from('internships')
+          .insert(batch)
+          .select();
+        
+        if (error) {
+          console.error(`Error uploading batch ${i+1}:`, error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
+          
+          // Try inserting records one by one to bypass the problematic records
+          console.log('Attempting to insert records individually...');
+          for (const record of batch) {
+            try {
+              const { data: singleData, error: singleError } = await supabase
+                .from('internships')
+                .insert(record)
+                .select();
+              
+              if (singleError) {
+                console.error(`Failed to insert record:`, JSON.stringify(record, null, 2));
+                console.error('Error:', singleError);
+              } else {
+                successCount++;
+                console.log('Successfully inserted individual record');
+              }
+            } catch (individualError) {
+              console.error('Error inserting individual record:', individualError);
+            }
+          }
+        } else {
+          successCount += data?.length || 0;
+          console.log(`Successfully uploaded batch ${i+1}, received ${data?.length} records back`);
+        }
+        
+        totalProcessed += batch.length;
+      } catch (batchError) {
+        console.error(`Error processing batch ${i+1}:`, batchError);
       }
-      
-      console.log(`Successfully uploaded batch ${i+1}, received ${data?.length} records back`);
     }
     
-    console.log('All internships uploaded successfully');
+    if (successCount === 0) {
+      throw new Error(`Failed to upload any records to Supabase. Please check the console for details.`);
+    }
+    
+    console.log(`Successfully uploaded ${successCount}/${totalProcessed} internships`);
+    return successCount;
   } catch (error) {
     console.error('Error in uploadMultipleInternships:', error);
     console.error('Error details:', JSON.stringify(error, null, 2));
