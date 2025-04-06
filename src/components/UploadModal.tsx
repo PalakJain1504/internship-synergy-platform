@@ -378,8 +378,8 @@ const UploadModal: React.FC<UploadModalProps> = ({
     }
     
     // For project portal, more fields are required
-    if (portalType === 'project' && (!metadata.year || !metadata.session || !metadata.semester)) {
-      toast.error('Please fill in all required metadata fields (year, session, semester)');
+    if (portalType === 'project' && (!metadata.facultyCoordinator)) {
+      toast.error('Please select a Faculty Coordinator');
       return;
     }
 

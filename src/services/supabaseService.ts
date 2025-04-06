@@ -1,15 +1,6 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { ProjectData, Filter, InternshipData, ProjectEntry, InternshipEntry } from '@/lib/types';
-
-// Initialize Supabase client
-
-// Note: In a real app, these would be environment variables
-const supabaseUrl = 'https://zslbfvtqqzwxiwmbzpdw.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzbGJmdnRxcXp3eGl3bWJ6cGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI2MzYzOTcsImV4cCI6MjA1ODIxMjM5N30.DpJ76e3anHUJ3aPypyj2jsiXcbRv6Mjh_BMipmtQHCU';
-
-// Create a client with your Supabase credentials
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '@/integrations/supabase/client';
 
 // Helper function to normalize program names
 const normalizeProgram = (program: string): string => {
@@ -232,6 +223,7 @@ const internshipToDbFormat = (internship: InternshipData) => {
     year: data.year,
     semester: data.semester,
     session: data.session,
+    faculty_coordinator: data.facultyCoordinator,
   };
   
   // Extract attendance and other dynamic fields
@@ -264,12 +256,13 @@ const dbToInternshipFormat = (dbInternship: any): InternshipEntry => {
     year: dbInternship.year || '',
     semester: dbInternship.semester || '',
     session: dbInternship.session || '',
+    facultyCoordinator: dbInternship.faculty_coordinator || '',
   };
   
   // Add all other fields from the database record (supporting dynamic columns)
   Object.entries(dbInternship).forEach(([key, value]) => {
     if (!['id', 'roll_no', 'name', 'program', 'organization', 'dates', 'noc', 
-         'offer_letter', 'pop', 'year', 'semester', 'session', 'created_at', 'updated_at'].includes(key)) {
+         'offer_letter', 'pop', 'year', 'semester', 'session', 'created_at', 'updated_at', 'faculty_coordinator'].includes(key)) {
       
       // Convert snake_case to camelCase or keep original for special names
       if (key.includes('attendance')) {
@@ -309,6 +302,9 @@ export async function fetchInternships(filters?: Filter) {
     }
     if (filters.program && filters.program !== 'all-programs') {
       query = query.eq('program', filters.program);
+    }
+    if (filters.facultyCoordinator && filters.facultyCoordinator !== 'all-coordinators') {
+      query = query.eq('faculty_coordinator', filters.facultyCoordinator);
     }
   }
 
@@ -426,6 +422,7 @@ export async function updateInternship(id: string, updates: Partial<InternshipEn
   Object.entries(internshipUpdates).forEach(([key, value]) => {
     if (key === 'rollNo') dbUpdates.roll_no = value;
     else if (key === 'offerLetter') dbUpdates.offer_letter = value;
+    else if (key === 'facultyCoordinator') dbUpdates.faculty_coordinator = value;
     else if (key.startsWith('Attendance')) {
       // Special handling for attendance fields
       const month = key.replace('Attendance ', '').toLowerCase();

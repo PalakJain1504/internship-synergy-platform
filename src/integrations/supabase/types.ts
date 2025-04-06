@@ -9,7 +9,129 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      internships: {
+        Row: {
+          created_at: string | null
+          dates: string | null
+          faculty_coordinator: string | null
+          id: string
+          name: string | null
+          noc: string | null
+          offer_letter: string | null
+          organization: string | null
+          pop: string | null
+          program: string | null
+          roll_no: string | null
+          semester: string | null
+          session: string | null
+          updated_at: string | null
+          year: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dates?: string | null
+          faculty_coordinator?: string | null
+          id?: string
+          name?: string | null
+          noc?: string | null
+          offer_letter?: string | null
+          organization?: string | null
+          pop?: string | null
+          program?: string | null
+          roll_no?: string | null
+          semester?: string | null
+          session?: string | null
+          updated_at?: string | null
+          year?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dates?: string | null
+          faculty_coordinator?: string | null
+          id?: string
+          name?: string | null
+          noc?: string | null
+          offer_letter?: string | null
+          organization?: string | null
+          pop?: string | null
+          program?: string | null
+          roll_no?: string | null
+          semester?: string | null
+          session?: string | null
+          updated_at?: string | null
+          year?: string | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string | null
+          domain: string | null
+          email: string | null
+          faculty_coordinator: string | null
+          faculty_mentor: string | null
+          form: string | null
+          group_no: string | null
+          id: string
+          industry_mentor: string | null
+          name: string | null
+          phone_no: string | null
+          presentation: string | null
+          program: string | null
+          report: string | null
+          roll_no: string | null
+          semester: string | null
+          session: string | null
+          title: string | null
+          updated_at: string | null
+          year: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          domain?: string | null
+          email?: string | null
+          faculty_coordinator?: string | null
+          faculty_mentor?: string | null
+          form?: string | null
+          group_no?: string | null
+          id?: string
+          industry_mentor?: string | null
+          name?: string | null
+          phone_no?: string | null
+          presentation?: string | null
+          program?: string | null
+          report?: string | null
+          roll_no?: string | null
+          semester?: string | null
+          session?: string | null
+          title?: string | null
+          updated_at?: string | null
+          year?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string | null
+          email?: string | null
+          faculty_coordinator?: string | null
+          faculty_mentor?: string | null
+          form?: string | null
+          group_no?: string | null
+          id?: string
+          industry_mentor?: string | null
+          name?: string | null
+          phone_no?: string | null
+          presentation?: string | null
+          program?: string | null
+          report?: string | null
+          roll_no?: string | null
+          semester?: string | null
+          session?: string | null
+          title?: string | null
+          updated_at?: string | null
+          year?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,185 +1,218 @@
 
-import React from 'react';
-import { HelpCircle } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface ExcelFormatGuideProps {
   portalType: 'project' | 'internship';
 }
 
 const ExcelFormatGuide: React.FC<ExcelFormatGuideProps> = ({ portalType }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  const renderColumnList = () => {
+    if (portalType === 'project') {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-1/4">Column Name</TableHead>
+              <TableHead className="w-1/4">Alternative Names</TableHead>
+              <TableHead className="w-1/2">Description</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-medium">S.No.</TableCell>
+              <TableCell>Serial No., ID</TableCell>
+              <TableCell>Optional - will be generated automatically if missing</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Group No.</TableCell>
+              <TableCell>Group, Team No.</TableCell>
+              <TableCell>Group identifier (e.g., G1, G2, etc.)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Roll No.</TableCell>
+              <TableCell>Enrollment No., Registration No.</TableCell>
+              <TableCell>Student's roll number (required)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Name</TableCell>
+              <TableCell>Student Name, Full Name</TableCell>
+              <TableCell>Student's full name (required)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Email</TableCell>
+              <TableCell>Email ID, Mail</TableCell>
+              <TableCell>Student's email address</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Phone No.</TableCell>
+              <TableCell>Contact, Mobile</TableCell>
+              <TableCell>Student's contact number</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Title</TableCell>
+              <TableCell>Project Title, Project Name</TableCell>
+              <TableCell>Title of the project</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Domain</TableCell>
+              <TableCell>Area, Field</TableCell>
+              <TableCell>Project domain/field (e.g., AI, Web Development)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Faculty Mentor</TableCell>
+              <TableCell>Guide, Internal Mentor</TableCell>
+              <TableCell>Name of faculty guiding the project</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Industry Mentor</TableCell>
+              <TableCell>External Mentor, Company Mentor</TableCell>
+              <TableCell>Name of industry person guiding the project (if any)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Program</TableCell>
+              <TableCell>Course, Degree, Branch</TableCell>
+              <TableCell>Program of study (e.g., BTech CSE, BCA)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Year</TableCell>
+              <TableCell>Study Year</TableCell>
+              <TableCell>Year of study (1, 2, 3, 4)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Session</TableCell>
+              <TableCell>Academic Year, Period</TableCell>
+              <TableCell>Academic session (e.g., 2023-2024)</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
+    } else {
+      // Internship format
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-1/4">Column Name</TableHead>
+              <TableHead className="w-1/4">Alternative Names</TableHead>
+              <TableHead className="w-1/2">Description</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-medium">S.No.</TableCell>
+              <TableCell>Serial No., ID</TableCell>
+              <TableCell>Optional - will be generated automatically if missing</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Roll No.</TableCell>
+              <TableCell>Enrollment No., Registration No.</TableCell>
+              <TableCell>Student's roll number (required)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Name</TableCell>
+              <TableCell>Student Name, Full Name</TableCell>
+              <TableCell>Student's full name (required)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Program</TableCell>
+              <TableCell>Course, Degree, Branch</TableCell>
+              <TableCell>Program of study (e.g., BTech CSE, BCA)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Organization</TableCell>
+              <TableCell>Company, Internship Place</TableCell>
+              <TableCell>Name of organization where internship was done</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Dates</TableCell>
+              <TableCell>Duration, Period</TableCell>
+              <TableCell>Internship duration/dates (e.g., "June 2023 - July 2023")</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Year</TableCell>
+              <TableCell>Study Year</TableCell>
+              <TableCell>Year of study (1, 2, 3, 4)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Semester</TableCell>
+              <TableCell>Term, Sem</TableCell>
+              <TableCell>Semester of study (1-8)</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Session</TableCell>
+              <TableCell>Academic Year, Period</TableCell>
+              <TableCell>Academic session (e.g., 2023-2024)</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
+    }
+  };
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="text-xs mb-2 flex items-center"
+    <div className="space-y-3 rounded-md border border-gray-200 p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <HelpCircle className="mr-2 h-4 w-4 text-brand-blue" />
+          <h3 className="text-sm font-medium text-gray-700">Excel Format Guide</h3>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleExpanded}
+          className="h-8 p-0 px-2"
         >
-          <HelpCircle className="h-3 w-3 mr-1" />
-          Excel Format Guide
+          {isExpanded ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Recommended Excel Format for {portalType === 'project' ? 'Project' : 'Internship'} Upload</DialogTitle>
-          <DialogDescription>
-            Follow this format to ensure successful data upload
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4 mt-4">
-          <div>
-            <h3 className="text-sm font-medium mb-2">Required Column Headers:</h3>
-            {portalType === 'project' ? (
-              <ul className="list-disc pl-5 text-sm space-y-1">
-                <li><span className="font-medium">Roll Number</span> (alternative headers: rollno, enrollment, regno)</li>
-                <li><span className="font-medium">Name</span> (alternative headers: student name, fullname)</li>
-                <li><span className="font-medium">Group No</span> (alternative headers: groupno, grno)</li>
-                <li><span className="font-medium">Title</span> (alternative headers: project title, projecttitle)</li>
-                <li><span className="font-medium">Faculty Mentor</span> (alternative headers: guide, internal mentor)</li>
-              </ul>
-            ) : (
-              <ul className="list-disc pl-5 text-sm space-y-1">
-                <li><span className="font-medium">Roll Number</span> (alternative headers: rollno, enrollment, regno)</li>
-                <li><span className="font-medium">Name</span> (alternative headers: student name, fullname)</li>
-                <li><span className="font-medium">Program</span> (alternative headers: course, branch, stream)</li>
-                <li><span className="font-medium">Organization</span> (alternative headers: company, org, internship place)</li>
-                <li><span className="font-medium">Dates</span> (alternative headers: duration, period)</li>
-              </ul>
-            )}
+      </div>
+
+      {isExpanded && (
+        <div className="text-sm text-gray-600 space-y-4 mt-2">
+          <p>
+            Follow these guidelines to prepare your Excel file for upload:
+          </p>
+          
+          <div className="space-y-2">
+            <h4 className="font-medium text-gray-700">Required Format:</h4>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>The first row must contain column headers</li>
+              <li>Each subsequent row represents a single {portalType === 'project' ? 'project entry' : 'internship entry'}</li>
+              <li>Roll No. and Name are required fields</li>
+              <li>For projects, students in the same group should have the same Group No.</li>
+            </ul>
           </div>
           
-          <div>
-            <h3 className="text-sm font-medium mb-2">Recommended Additional Columns:</h3>
-            {portalType === 'project' ? (
-              <ul className="list-disc pl-5 text-sm space-y-1">
-                <li><span className="font-medium">Email</span></li>
-                <li><span className="font-medium">Phone</span> (alternative headers: mobile, contact)</li>
-                <li><span className="font-medium">Domain</span> (alternative headers: area, field)</li>
-                <li><span className="font-medium">Industry Mentor</span> (alternative headers: external mentor, company guide)</li>
-              </ul>
-            ) : (
-              <ul className="list-disc pl-5 text-sm space-y-1">
-                <li><span className="font-medium">Year</span></li>
-                <li><span className="font-medium">Semester</span></li>
-                <li><span className="font-medium">Session</span> (format: 2023-2024)</li>
-                <li><span className="font-medium">NOC</span> (file references)</li>
-                <li><span className="font-medium">Offer Letter</span> (file references)</li>
-                <li><span className="font-medium">PoP</span> (Proof of Participation, file references)</li>
-              </ul>
-            )}
-          </div>
-          
-          <div className="bg-blue-50 p-3 rounded-md">
-            <h3 className="text-sm font-medium mb-2 text-blue-700">Example Format:</h3>
+          <div className="space-y-2">
+            <h4 className="font-medium text-gray-700">Recommended Columns:</h4>
             <div className="overflow-x-auto">
-              <table className="min-w-full border border-gray-200 text-xs">
-                <thead className="bg-gray-100">
-                  <tr>
-                    {portalType === 'project' ? (
-                      <>
-                        <th className="border px-2 py-1">S.No</th>
-                        <th className="border px-2 py-1">Roll No</th>
-                        <th className="border px-2 py-1">Name</th>
-                        <th className="border px-2 py-1">Group No</th>
-                        <th className="border px-2 py-1">Title</th>
-                        <th className="border px-2 py-1">Domain</th>
-                        <th className="border px-2 py-1">Faculty Mentor</th>
-                        <th className="border px-2 py-1">Industry Mentor</th>
-                      </>
-                    ) : (
-                      <>
-                        <th className="border px-2 py-1">S.No</th>
-                        <th className="border px-2 py-1">Roll No</th>
-                        <th className="border px-2 py-1">Name</th>
-                        <th className="border px-2 py-1">Program</th>
-                        <th className="border px-2 py-1">Year</th>
-                        <th className="border px-2 py-1">Semester</th>
-                        <th className="border px-2 py-1">Session</th>
-                        <th className="border px-2 py-1">Organization</th>
-                        <th className="border px-2 py-1">Dates</th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {portalType === 'project' ? (
-                    <>
-                      <tr>
-                        <td className="border px-2 py-1">1</td>
-                        <td className="border px-2 py-1">R101</td>
-                        <td className="border px-2 py-1">John Smith</td>
-                        <td className="border px-2 py-1">G1</td>
-                        <td className="border px-2 py-1">Smart Home Automation</td>
-                        <td className="border px-2 py-1">IoT</td>
-                        <td className="border px-2 py-1">Dr. Amit Kumar</td>
-                        <td className="border px-2 py-1">Mr. Rajiv Mehta</td>
-                      </tr>
-                      <tr>
-                        <td className="border px-2 py-1">2</td>
-                        <td className="border px-2 py-1">R102</td>
-                        <td className="border px-2 py-1">Sarah Johnson</td>
-                        <td className="border px-2 py-1">G1</td>
-                        <td className="border px-2 py-1">Smart Home Automation</td>
-                        <td className="border px-2 py-1">IoT</td>
-                        <td className="border px-2 py-1">Dr. Amit Kumar</td>
-                        <td className="border px-2 py-1">Mr. Rajiv Mehta</td>
-                      </tr>
-                    </>
-                  ) : (
-                    <>
-                      <tr>
-                        <td className="border px-2 py-1">1</td>
-                        <td className="border px-2 py-1">R101</td>
-                        <td className="border px-2 py-1">John Smith</td>
-                        <td className="border px-2 py-1">BTech CSE</td>
-                        <td className="border px-2 py-1">3</td>
-                        <td className="border px-2 py-1">6</td>
-                        <td className="border px-2 py-1">2023-2024</td>
-                        <td className="border px-2 py-1">TechCorp Inc.</td>
-                        <td className="border px-2 py-1">May-Jul 2023</td>
-                      </tr>
-                      <tr>
-                        <td className="border px-2 py-1">2</td>
-                        <td className="border px-2 py-1">R102</td>
-                        <td className="border px-2 py-1">Sarah Johnson</td>
-                        <td className="border px-2 py-1">BSc CS</td>
-                        <td className="border px-2 py-1">2</td>
-                        <td className="border px-2 py-1">4</td>
-                        <td className="border px-2 py-1">2023-2024</td>
-                        <td className="border px-2 py-1">DataSoft Solutions</td>
-                        <td className="border px-2 py-1">Jun-Aug 2023</td>
-                      </tr>
-                    </>
-                  )}
-                </tbody>
-              </table>
+              {renderColumnList()}
             </div>
           </div>
           
-          <div>
-            <h3 className="text-sm font-medium mb-2">Important Notes:</h3>
-            <ul className="list-disc pl-5 text-sm space-y-1">
-              <li>The system will try to recognize various header names, but using the exact headers as shown above is recommended.</li>
-              <li>Make sure to save your Excel file in .xlsx or .xls format.</li>
-              <li>If you're uploading to the {portalType === 'project' ? 'Project' : 'Internship'} Portal, ensure the correct portal type is selected.</li>
-              <li>For file references (document links), simply enter the filename or leave blank if not available.</li>
-              <li>Empty cells are allowed, but the system will fill in default values for required fields if missing.</li>
-              <li>If multiple students belong to the same project group, ensure the Group No is identical for all of them.</li>
+          <div className="space-y-2">
+            <h4 className="font-medium text-gray-700">Notes:</h4>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>The system will attempt to recognize column names even if they don't exactly match the recommended names</li>
+              <li>If Roll No. or Name is missing, the system will generate default values</li>
+              <li>Additional metadata can be set in the form below after uploading</li>
             </ul>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </div>
   );
 };
 

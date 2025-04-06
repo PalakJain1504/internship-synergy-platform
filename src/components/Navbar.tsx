@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Menu, X, LogOut, Home } from 'lucide-react';
+import universityLogo from '@/assets/university-logo.png';
 
 interface NavbarProps {
   showAuthButtons?: boolean;
@@ -15,7 +16,7 @@ interface NavbarProps {
 const Navbar = ({ 
   showAuthButtons = true, 
   transparent = false,
-  logo = '',
+  logo = universityLogo,
   title = 'K.R. Mangalam University'
 }: NavbarProps) => {
   const { isAuthenticated, logout } = useAuth();
@@ -53,7 +54,9 @@ const Navbar = ({
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-3">
             {logo && (
-              <img src={logo} alt="Logo" className="h-10 w-auto object-contain" />
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-brand-blue flex items-center justify-center">
+                <img src={logo} alt="Logo" className="h-full w-full object-cover" />
+              </div>
             )}
             <h1 className={`text-xl font-semibold ${isScrolled || !transparent ? 'text-brand-blue' : 'text-white'}`}>
               {title}
