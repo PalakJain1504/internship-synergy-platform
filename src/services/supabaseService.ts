@@ -1,506 +1,133 @@
-import { createClient } from '@supabase/supabase-js';
-import { ProjectData, Filter, InternshipData, ProjectEntry, InternshipEntry } from '@/lib/types';
+
 import { supabase } from '@/integrations/supabase/client';
+import { InternshipData } from '@/lib/types';
 
-// Helper function to normalize program names
-const normalizeProgram = (program: string): string => {
-  // Convert to lowercase and remove dots and spaces
-  const normalized = program.toLowerCase().replace(/\s|\./g, '');
-  
-  // Map common variations
-  const mappings: Record<string, string> = {
-    'btech': 'btech',
-    'btechcse': 'btechcse',
-    'btechai': 'btechai/ml',
-    'btechaiml': 'btechai/ml',
-    'btechaids': 'btechai/ds',
-    'bsc': 'bsc',
-    'bca': 'bca',
-    'bcaai': 'bcaai/ds',
-    'bcaaids': 'bcaai/ds',
-    'mca': 'mca'
-  };
-  
-  // Find the best match
-  for (const [key, value] of Object.entries(mappings)) {
-    if (normalized.includes(key)) {
-      return value;
-    }
-  }
-  
-  return normalized;
-};
-
-// Function to normalize course/program names (needed for file system paths)
-const normalizeCourse = (course: string): string => {
-  const normalized = course.toLowerCase().replace(/\s|\./g, '');
-  return normalized;
-};
-
-// Project data functions
-const projectToDbFormat = (project: ProjectData) => {
-  const { isEditing, isNew, ...data } = project;
-  return {
-    id: data.id,
-    group_no: data.groupNo,
-    roll_no: data.rollNo,
-    name: data.name,
-    email: data.email,
-    phone_no: data.phoneNo,
-    title: data.title,
-    domain: data.domain,
-    faculty_mentor: data.facultyMentor,
-    industry_mentor: data.industryMentor,
-    form: data.form,
-    presentation: data.presentation,
-    report: data.report,
-    year: data.year,
-    semester: data.semester,
-    session: data.session,
-    program: data.program,
-    faculty_coordinator: data.facultyCoordinator,
-  };
-};
-
-const dbToProjectFormat = (dbProject: any): ProjectEntry => {
-  return {
-    id: dbProject.id,
-    groupNo: dbProject.group_no || '',
-    rollNo: dbProject.roll_no || '',
-    name: dbProject.name || '',
-    email: dbProject.email || '',
-    phoneNo: dbProject.phone_no || '',
-    title: dbProject.title || '',
-    domain: dbProject.domain || '',
-    facultyMentor: dbProject.faculty_mentor || '',
-    industryMentor: dbProject.industry_mentor || '',
-    form: dbProject.form || '',
-    presentation: dbProject.presentation || '',
-    report: dbProject.report || '',
-    year: dbProject.year || '',
-    semester: dbProject.semester || '',
-    session: dbProject.session || '',
-    program: dbProject.program || '',
-    facultyCoordinator: dbProject.faculty_coordinator || '',
-  };
-};
-
-export async function fetchProjects(filters?: Filter) {
-  let query = supabase
-    .from('projects')
-    .select('*');
-
-  // Apply filters
-  if (filters) {
-    if (filters.year && filters.year !== 'all-years') {
-      query = query.eq('year', filters.year);
-    }
-    if (filters.semester && filters.semester !== 'all-semesters') {
-      query = query.eq('semester', filters.semester);
-    }
-    if (filters.session && filters.session !== 'all-sessions') {
-      query = query.eq('session', filters.session);
-    }
-    if (filters.program && filters.program !== 'all-programs') {
-      query = query.eq('program', filters.program);
-    }
-    if (filters.facultyCoordinator && filters.facultyCoordinator !== 'all-coordinators') {
-      query = query.eq('faculty_coordinator', filters.facultyCoordinator);
-    }
-  }
-
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error('Error fetching projects:', error);
-    throw error;
-  }
-  
-  return data.map(dbToProjectFormat) as ProjectEntry[];
-}
-
-export async function uploadProject(project: ProjectEntry) {
-  const dbProject = projectToDbFormat(project);
-  const { error } = await supabase
-    .from('projects')
-    .insert(dbProject);
-  
-  if (error) {
-    console.error('Error uploading project:', error);
-    throw error;
-  }
-}
-
-export async function uploadMultipleProjects(projects: ProjectEntry[]) {
-  if (!projects || projects.length === 0) {
-    console.error('No projects provided for upload');
-    throw new Error('No projects provided for upload');
-  }
-  
-  console.log(`Uploading ${projects.length} projects to Supabase`);
-  
+// Function to fetch all internships from Supabase
+export const fetchInternships = async (): Promise<InternshipData[]> => {
   try {
-    // First convert all projects to database format
-    const dbProjects = projects.map(projectToDbFormat);
-    
-    // Process in smaller batches to avoid potential size limitations
-    const BATCH_SIZE = 20;
-    const batches = [];
-    
-    for (let i = 0; i < dbProjects.length; i += BATCH_SIZE) {
-      batches.push(dbProjects.slice(i, i + BATCH_SIZE));
+    const { data, error } = await supabase
+      .from('internships')
+      .select('*');
+
+    if (error) {
+      console.error('Error fetching internships from Supabase:', error);
+      throw error;
     }
-    
-    console.log(`Split into ${batches.length} batches of max ${BATCH_SIZE} records each`);
-    
-    // Process each batch
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
-      console.log(`Processing batch ${i+1}/${batches.length} with ${batch.length} records`);
-      
-      const { data, error } = await supabase
-        .from('projects')
-        .insert(batch)
-        .select(); // Add select to get returned data
-      
-      if (error) {
-        console.error(`Error uploading batch ${i+1}:`, error);
-        throw error;
-      }
-      
-      console.log(`Successfully uploaded batch ${i+1}, received ${data?.length} records back`);
-    }
-    
-    console.log('All projects uploaded successfully');
+
+    // Transform the data to match the InternshipData interface
+    const formattedData: InternshipData[] = data.map(item => ({
+      id: item.id,
+      rollNo: item.roll_no || '',
+      name: item.name || '',
+      program: item.program || '',
+      organization: item.organization || '',
+      dates: item.dates || '',
+      noc: item.noc || '',
+      offerLetter: item.offer_letter || '',
+      pop: item.pop || '',
+      year: item.year || '',
+      semester: item.semester || '',
+      session: item.session || '',
+      faculty_coordinator: typeof item.faculty_coordinator === 'boolean' 
+        ? String(item.faculty_coordinator) 
+        : (item.faculty_coordinator || '')
+    }));
+
+    return formattedData;
   } catch (error) {
-    console.error('Error in uploadMultipleProjects:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
-    throw error;
-  }
-}
-
-export async function updateProject(id: string, updates: Partial<ProjectEntry>) {
-  const { isEditing, isNew, ...projectUpdates } = updates;
-  const dbUpdates: Record<string, any> = {};
-  
-  // Convert camelCase to snake_case for database fields
-  Object.entries(projectUpdates).forEach(([key, value]) => {
-    if (key === 'groupNo') dbUpdates.group_no = value;
-    else if (key === 'rollNo') dbUpdates.roll_no = value;
-    else if (key === 'phoneNo') dbUpdates.phone_no = value;
-    else if (key === 'facultyMentor') dbUpdates.faculty_mentor = value;
-    else if (key === 'industryMentor') dbUpdates.industry_mentor = value;
-    else if (key === 'facultyCoordinator') dbUpdates.faculty_coordinator = value;
-    else dbUpdates[key.replace(/([A-Z])/g, '_$1').toLowerCase()] = value;
-  });
-
-  const { error } = await supabase
-    .from('projects')
-    .update(dbUpdates)
-    .eq('id', id);
-  
-  if (error) {
-    console.error('Error updating project:', error);
-    throw error;
-  }
-}
-
-// Internship data functions
-const internshipToDbFormat = (internship: InternshipData) => {
-  const { isEditing, isNew, ...data } = internship;
-  
-  // Extract base fields
-  const baseFields = {
-    id: data.id,
-    roll_no: data.rollNo,
-    name: data.name,
-    program: data.program,
-    organization: data.organization,
-    dates: data.dates,
-    noc: data.noc,
-    offer_letter: data.offerLetter,
-    pop: data.pop,
-    year: data.year,
-    semester: data.semester,
-    session: data.session,
-    faculty_coordinator: data.facultyCoordinator,
-  };
-  
-  // Extract attendance and other dynamic fields
-  const dynamicFields: Record<string, string> = {};
-  Object.entries(data).forEach(([key, value]) => {
-    if (!Object.keys(baseFields).includes(key.replace(/([A-Z])/g, '_$1').toLowerCase()) && 
-        key !== 'isEditing' && 
-        key !== 'isNew' && 
-        typeof value === 'string') {
-      
-      dynamicFields[key.replace(/([A-Z])/g, '_$1').toLowerCase()] = value;
-    }
-  });
-  
-  return { ...baseFields, ...dynamicFields };
-};
-
-const dbToInternshipFormat = (dbInternship: any): InternshipEntry => {
-  // Start with base fields
-  const internship: Record<string, string> = {
-    id: dbInternship.id,
-    rollNo: dbInternship.roll_no || '',
-    name: dbInternship.name || '',
-    program: dbInternship.program || '',
-    organization: dbInternship.organization || '',
-    dates: dbInternship.dates || '',
-    noc: dbInternship.noc || '',
-    offerLetter: dbInternship.offer_letter || '',
-    pop: dbInternship.pop || '',
-    year: dbInternship.year || '',
-    semester: dbInternship.semester || '',
-    session: dbInternship.session || '',
-    facultyCoordinator: dbInternship.faculty_coordinator || '',
-  };
-  
-  // Add all other fields from the database record (supporting dynamic columns)
-  Object.entries(dbInternship).forEach(([key, value]) => {
-    if (!['id', 'roll_no', 'name', 'program', 'organization', 'dates', 'noc', 
-         'offer_letter', 'pop', 'year', 'semester', 'session', 'created_at', 'updated_at', 'faculty_coordinator'].includes(key)) {
-      
-      // Convert snake_case to camelCase or keep original for special names
-      if (key.includes('attendance')) {
-        // Special handling for attendance fields to preserve month capitalization
-        const parts = key.split('_');
-        if (parts.length >= 2) {
-          const monthPart = parts[1];
-          const month = monthPart.charAt(0).toUpperCase() + monthPart.slice(1);
-          internship[`Attendance ${month}`] = value as string || '';
-        }
-      } else {
-        // Regular conversion for other fields
-        const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-        internship[camelKey] = value as string || '';
-      }
-    }
-  });
-  
-  return internship as InternshipEntry;
-};
-
-export async function fetchInternships(filters?: Filter) {
-  let query = supabase
-    .from('internships')
-    .select('*');
-
-  // Apply filters
-  if (filters) {
-    if (filters.year && filters.year !== 'all-years') {
-      query = query.eq('year', filters.year);
-    }
-    if (filters.semester && filters.semester !== 'all-semesters') {
-      query = query.eq('semester', filters.semester);
-    }
-    if (filters.session && filters.session !== 'all-sessions') {
-      query = query.eq('session', filters.session);
-    }
-    if (filters.program && filters.program !== 'all-programs') {
-      query = query.eq('program', filters.program);
-    }
-    if (filters.facultyCoordinator && filters.facultyCoordinator !== 'all-coordinators') {
-      query = query.eq('faculty_coordinator', filters.facultyCoordinator);
-    }
-  }
-
-  const { data, error } = await query;
-  
-  if (error) {
     console.error('Error fetching internships:', error);
     throw error;
   }
-  
-  return data.map(dbToInternshipFormat) as InternshipEntry[];
-}
+};
 
-export async function uploadInternship(internship: InternshipEntry) {
-  const dbInternship = internshipToDbFormat(internship);
-  const { error } = await supabase
-    .from('internships')
-    .insert(dbInternship);
-  
-  if (error) {
-    console.error('Error uploading internship:', error);
-    throw error;
-  }
-}
-
-export async function uploadMultipleInternships(internships: InternshipEntry[]) {
-  if (!internships || internships.length === 0) {
-    console.error('No internships provided for upload');
-    throw new Error('No internships provided for upload');
-  }
-  
-  console.log(`Uploading ${internships.length} internships to Supabase`);
-  
+// Function to upload a single internship to Supabase
+export const uploadInternship = async (internship: InternshipData): Promise<{ success: boolean, error?: any }> => {
   try {
-    // First convert all internships to database format
-    const dbInternships = internships.map(internshipToDbFormat);
-    
-    // Process in smaller batches to avoid potential size limitations
-    const BATCH_SIZE = 10; // Reduced batch size for better reliability
-    const batches = [];
-    
-    for (let i = 0; i < dbInternships.length; i += BATCH_SIZE) {
-      batches.push(dbInternships.slice(i, i + BATCH_SIZE));
-    }
-    
-    console.log(`Split into ${batches.length} batches of max ${BATCH_SIZE} records each`);
-    
-    let totalProcessed = 0;
-    let successCount = 0;
-    
-    // Process each batch
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
-      console.log(`Processing batch ${i+1}/${batches.length} with ${batch.length} records`);
-      
-      try {
-        const { data, error } = await supabase
-          .from('internships')
-          .insert(batch)
-          .select();
-        
-        if (error) {
-          console.error(`Error uploading batch ${i+1}:`, error);
-          console.error('Error details:', JSON.stringify(error, null, 2));
-          
-          // Try inserting records one by one to bypass the problematic records
-          console.log('Attempting to insert records individually...');
-          for (const record of batch) {
-            try {
-              const { data: singleData, error: singleError } = await supabase
-                .from('internships')
-                .insert(record)
-                .select();
-              
-              if (singleError) {
-                console.error(`Failed to insert record:`, JSON.stringify(record, null, 2));
-                console.error('Error:', singleError);
-              } else {
-                successCount++;
-                console.log('Successfully inserted individual record');
-              }
-            } catch (individualError) {
-              console.error('Error inserting individual record:', individualError);
-            }
-          }
-        } else {
-          successCount += data?.length || 0;
-          console.log(`Successfully uploaded batch ${i+1}, received ${data?.length} records back`);
-        }
-        
-        totalProcessed += batch.length;
-      } catch (batchError) {
-        console.error(`Error processing batch ${i+1}:`, batchError);
-      }
-    }
-    
-    if (successCount === 0) {
-      throw new Error(`Failed to upload any records to Supabase. Please check the console for details.`);
-    }
-    
-    console.log(`Successfully uploaded ${successCount}/${totalProcessed} internships`);
-    return successCount;
+    // Convert any non-string faculty_coordinator to string
+    const formattedInternship = {
+      ...internship,
+      faculty_coordinator: typeof internship.faculty_coordinator === 'boolean' 
+        ? String(internship.faculty_coordinator) 
+        : internship.faculty_coordinator
+    };
+
+    const { error } = await supabase
+      .from('internships')
+      .insert({
+        id: formattedInternship.id,
+        roll_no: formattedInternship.rollNo,
+        name: formattedInternship.name,
+        program: formattedInternship.program,
+        organization: formattedInternship.organization,
+        dates: formattedInternship.dates,
+        noc: formattedInternship.noc,
+        offer_letter: formattedInternship.offerLetter,
+        pop: formattedInternship.pop,
+        year: formattedInternship.year,
+        semester: formattedInternship.semester,
+        session: formattedInternship.session,
+        faculty_coordinator: String(formattedInternship.faculty_coordinator || '')
+      });
+
+    if (error) throw error;
+    return { success: true };
   } catch (error) {
-    console.error('Error in uploadMultipleInternships:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
-    throw error;
+    console.error('Error uploading internship to Supabase:', error);
+    return { success: false, error };
   }
-}
+};
 
-export async function updateInternship(id: string, updates: Partial<InternshipEntry>) {
-  const { isEditing, isNew, ...internshipUpdates } = updates;
-  const dbUpdates: Record<string, any> = {};
-  
-  // Convert camelCase to snake_case for database fields
-  Object.entries(internshipUpdates).forEach(([key, value]) => {
-    if (key === 'rollNo') dbUpdates.roll_no = value;
-    else if (key === 'offerLetter') dbUpdates.offer_letter = value;
-    else if (key === 'facultyCoordinator') dbUpdates.faculty_coordinator = value;
-    else if (key.startsWith('Attendance')) {
-      // Special handling for attendance fields
-      const month = key.replace('Attendance ', '').toLowerCase();
-      dbUpdates[`attendance_${month}`] = value;
+// Function to upload multiple internships to Supabase
+export const uploadMultipleInternships = async (internships: InternshipData[]): Promise<{ success: boolean, error?: any }> => {
+  try {
+    const formattedInternships = internships.map(internship => ({
+      id: internship.id,
+      roll_no: internship.rollNo,
+      name: internship.name,
+      program: internship.program,
+      organization: internship.organization,
+      dates: internship.dates,
+      noc: internship.noc,
+      offer_letter: internship.offerLetter,
+      pop: internship.pop,
+      year: internship.year,
+      semester: internship.semester,
+      session: internship.session,
+      faculty_coordinator: typeof internship.faculty_coordinator === 'boolean' 
+        ? String(internship.faculty_coordinator) 
+        : String(internship.faculty_coordinator || '')
+    }));
+
+    // Log internships for debugging
+    console.log('Uploading formatted internships:', formattedInternships);
+
+    const { error } = await supabase
+      .from('internships')
+      .insert(formattedInternships);
+
+    if (error) {
+      console.error('Supabase error when uploading internships:', error);
+      throw error;
     }
-    else dbUpdates[key.replace(/([A-Z])/g, '_$1').toLowerCase()] = value;
-  });
-
-  const { error } = await supabase
-    .from('internships')
-    .update(dbUpdates)
-    .eq('id', id);
-  
-  if (error) {
-    console.error('Error updating internship:', error);
-    throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error uploading multiple internships to Supabase:', error);
+    return { success: false, error };
   }
-}
+};
 
-// File storage functions - modified to handle nested paths based on course and group
-export async function uploadFile(file: File, path: string) {
-  const { data, error } = await supabase
-    .storage
-    .from('project-files')
-    .upload(path, file);
-  
-  if (error) {
-    console.error('Error uploading file:', error);
-    throw error;
+// Create an edge function for Google Forms integration
+export const setupGoogleFormsIntegration = async (): Promise<{ success: boolean, message: string }> => {
+  try {
+    const result = await supabase.functions.invoke('google-forms-integration', {
+      body: { action: 'setup' }
+    });
+    
+    if (result.error) throw new Error(result.error.message);
+    return { success: true, message: 'Google Forms integration set up successfully' };
+  } catch (error) {
+    console.error('Error setting up Google Forms integration:', error);
+    return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
   }
-  
-  return data;
-}
+};
 
-export async function getFilesInFolder(portalType: string, fieldType: string, courseFolder: string, groupFolder: string) {
-  // Normalize the course name to handle variations
-  const normalizedCourse = normalizeCourse(courseFolder);
-  
-  // Create a path structure: portalType/fieldType/courseFolder/groupFolder/
-  const path = `${portalType}/${fieldType}/${normalizedCourse}/${groupFolder}/`;
-  
-  const { data, error } = await supabase
-    .storage
-    .from('project-files')
-    .list(path);
-  
-  if (error) {
-    console.error('Error listing files:', error);
-    throw error;
-  }
-  
-  return data;
-}
-
-export async function getFileUrl(path: string) {
-  const { data } = await supabase
-    .storage
-    .from('project-files')
-    .getPublicUrl(path);
-  
-  return data.publicUrl;
-}
-
-export async function deleteFile(path: string) {
-  const { error } = await supabase
-    .storage
-    .from('project-files')
-    .remove([path]);
-  
-  if (error) {
-    console.error('Error deleting file:', error);
-    throw error;
-  }
-}
-
-// Function to parse Excel data
-export async function parseExcelData(file: File) {
-  console.log('Parsing Excel file:', file.name);
-  
-  return [];
-}

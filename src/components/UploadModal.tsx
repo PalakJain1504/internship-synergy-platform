@@ -409,9 +409,9 @@ const UploadModal: React.FC<UploadModalProps> = ({
       rows.forEach((row, rowIndex) => {
         const entry: Record<string, string> = {
           id: `upload-${Date.now()}-${rowIndex}`,
-          year: '',
-          semester: '',
-          session: '',
+          year: metadata.year || '',
+          semester: metadata.semester || '',
+          session: metadata.session || '',
           rollNo: '',
           name: '',
           program: '',
@@ -457,15 +457,16 @@ const UploadModal: React.FC<UploadModalProps> = ({
         }
         
         // Try to extract year from row data if not already set
-        if (!entry.year) {
-          // Look in known year columns first
-          const yearCol = headers.findIndex(h => 
-            h && String(h).toLowerCase().includes('year')
-          );
-          
-          if (yearCol !== -1 && row[yearCol]) {
-            entry.year = String(row[yearCol]);
-          }
+        if (!entry.year && metadata.year) {
+          entry.year = metadata.year;
+        }
+        
+        if (!entry.semester && metadata.semester) {
+          entry.semester = metadata.semester;
+        }
+        
+        if (!entry.session && metadata.session) {
+          entry.session = metadata.session;
         }
         
         // If we still don't have roll number, try to infer it
@@ -550,13 +551,25 @@ const UploadModal: React.FC<UploadModalProps> = ({
         }
       });
 
-      console.log(`Successfully processed ${finalEntries.length} entries`);
+      console.log(`Successfully processed ${finalEntries.length} entries:`, finalEntries);
       
-      onUpload(finalEntries as any, metadata);
+      // Upload entries to Supabase
+      if (finalEntries.length > 0) {
+        try {
+          const result = await onUpload(finalEntries as any, metadata);
+          console.log('Upload result:', result);
+        } catch (error) {
+          console.error('Error in upload handler:', error);
+          toast.error('Error processing the upload. Please check console for details.');
+          setIsUploading(false);
+          return;
+        }
+      }
+      
       setIsUploading(false);
       setFile(null);
       setPreviewData(null);
-      toast.success(`Successfully uploaded ${finalEntries.length} entries`);
+      toast.success(`Successfully processed ${finalEntries.length} entries`);
       onClose();
     } catch (error) {
       console.error('Error during upload:', error);

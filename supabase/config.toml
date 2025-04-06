@@ -1,1 +1,25 @@
+
+# This file is used for configuring Supabase project settings
+
 project_id = "gjhwggkmrqwskexdnmif"
+
+[api]
+# Enable realtime functionality
+enabled_apis = ["rest", "graphql", "realtime"]
+
+[db]
+# Port to use for the local development database
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+# Enable connection pooler (pgbouncer)
+enabled = false
+port = 6543
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[functions.google-forms-integration]
+verify_jwt = true
