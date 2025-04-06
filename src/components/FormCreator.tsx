@@ -25,7 +25,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Plus, X, FileText, Loader2 } from 'lucide-react';
 import { FormSettings } from '@/lib/types';
-import { createGoogleForm, addFormQuestions } from '@/services/googleFormsService';
+import { createGoogleForm, initGoogleApi, addFormQuestions } from '@/services/googleFormsService';
 
 interface FormCreatorProps {
   isOpen: boolean;
@@ -40,11 +40,11 @@ const projectBaseFields = [
 ];
 
 const internshipBaseFields = [
-  'rollNo', 'name', 'program', 'organization', 'dates'
+  'rollNo', 'name', 'program', 'organization', 'dates', 'session', 'year', 'semester'
 ];
 
 const projectPdfFields = ['form', 'presentation', 'report'];
-const internshipPdfFields = ['noc', 'offerLetter'];
+const internshipPdfFields = ['noc', 'offerLetter', 'pop'];
 
 const fieldLabels: Record<string, string> = {
   groupNo: 'Group Number',
@@ -64,7 +64,11 @@ const fieldLabels: Record<string, string> = {
   presentation: 'Presentation',
   report: 'Report',
   noc: 'NOC',
-  offerLetter: 'Offer Letter'
+  offerLetter: 'Offer Letter',
+  pop: 'Proof of Participation',
+  session: 'Session',
+  year: 'Year',
+  semester: 'Semester'
 };
 
 const formSchema = z.object({
@@ -147,16 +151,11 @@ const FormCreator: React.FC<FormCreatorProps> = ({
       return;
     }
 
-    const minStudents = values.minStudents || 1;
-    const maxStudents = values.maxStudents || 4;
-
-    if (minStudents < 1) {
-      toast.error('Minimum students must be at least 1');
-      return;
-    }
-
-    if (maxStudents < minStudents) {
-      toast.error('Maximum students cannot be less than minimum students');
+    try {
+      await initGoogleApi();
+    } catch (error) {
+      console.error('Failed to initialize Google API:', error);
+      toast.error('Failed to initialize Google API client. Please check console for details.');
       return;
     }
 
@@ -170,17 +169,18 @@ const FormCreator: React.FC<FormCreatorProps> = ({
         year: values.year,
         semester: values.semester,
         program: values.program,
-        minStudents,
-        maxStudents,
+        minStudents: values.minStudents || 1,
+        maxStudents: values.maxStudents || 4,
         includeFields: selectedFields,
         pdfFields: selectedPdfFields,
         customFields,
       };
 
+      console.log('Creating form with settings:', formSettings);
       const response = await createGoogleForm(formSettings);
 
       if (!response) {
-        toast.error('Failed to create form');
+        toast.error('Failed to create form. Please check console for details.');
         setIsSubmitting(false);
         return;
       }
@@ -190,7 +190,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({
       onClose();
     } catch (error) {
       console.error('Error creating form:', error);
-      toast.error('Failed to create form. Please try again.');
+      toast.error('Failed to create form. Please try again or check console for details.');
     } finally {
       setIsSubmitting(false);
     }

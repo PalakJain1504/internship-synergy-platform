@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { ProjectData, Filter, InternshipData, ProjectEntry, InternshipEntry } from '@/lib/types';
 
@@ -7,8 +6,6 @@ import { ProjectData, Filter, InternshipData, ProjectEntry, InternshipEntry } fr
 // Note: In a real app, these would be environment variables
 const supabaseUrl = 'https://zslbfvtqqzwxiwmbzpdw.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzbGJmdnRxcXp3eGl3bWJ6cGR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI2MzYzOTcsImV4cCI6MjA1ODIxMjM5N30.DpJ76e3anHUJ3aPypyj2jsiXcbRv6Mjh_BMipmtQHCU';
-
-
 
 // Create a client with your Supabase credentials
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -143,13 +140,49 @@ export async function uploadProject(project: ProjectEntry) {
 }
 
 export async function uploadMultipleProjects(projects: ProjectEntry[]) {
-  const dbProjects = projects.map(projectToDbFormat);
-  const { error } = await supabase
-    .from('projects')
-    .insert(dbProjects);
+  if (!projects || projects.length === 0) {
+    console.error('No projects provided for upload');
+    throw new Error('No projects provided for upload');
+  }
   
-  if (error) {
-    console.error('Error uploading projects batch:', error);
+  console.log(`Uploading ${projects.length} projects to Supabase`);
+  
+  try {
+    // First convert all projects to database format
+    const dbProjects = projects.map(projectToDbFormat);
+    
+    // Process in smaller batches to avoid potential size limitations
+    const BATCH_SIZE = 20;
+    const batches = [];
+    
+    for (let i = 0; i < dbProjects.length; i += BATCH_SIZE) {
+      batches.push(dbProjects.slice(i, i + BATCH_SIZE));
+    }
+    
+    console.log(`Split into ${batches.length} batches of max ${BATCH_SIZE} records each`);
+    
+    // Process each batch
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      console.log(`Processing batch ${i+1}/${batches.length} with ${batch.length} records`);
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .insert(batch)
+        .select(); // Add select to get returned data
+      
+      if (error) {
+        console.error(`Error uploading batch ${i+1}:`, error);
+        throw error;
+      }
+      
+      console.log(`Successfully uploaded batch ${i+1}, received ${data?.length} records back`);
+    }
+    
+    console.log('All projects uploaded successfully');
+  } catch (error) {
+    console.error('Error in uploadMultipleProjects:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     throw error;
   }
 }
@@ -301,13 +334,49 @@ export async function uploadInternship(internship: InternshipEntry) {
 }
 
 export async function uploadMultipleInternships(internships: InternshipEntry[]) {
-  const dbInternships = internships.map(internshipToDbFormat);
-  const { error } = await supabase
-    .from('internships')
-    .insert(dbInternships);
+  if (!internships || internships.length === 0) {
+    console.error('No internships provided for upload');
+    throw new Error('No internships provided for upload');
+  }
   
-  if (error) {
-    console.error('Error uploading internships batch:', error);
+  console.log(`Uploading ${internships.length} internships to Supabase`);
+  
+  try {
+    // First convert all internships to database format
+    const dbInternships = internships.map(internshipToDbFormat);
+    
+    // Process in smaller batches to avoid potential size limitations
+    const BATCH_SIZE = 20;
+    const batches = [];
+    
+    for (let i = 0; i < dbInternships.length; i += BATCH_SIZE) {
+      batches.push(dbInternships.slice(i, i + BATCH_SIZE));
+    }
+    
+    console.log(`Split into ${batches.length} batches of max ${BATCH_SIZE} records each`);
+    
+    // Process each batch
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      console.log(`Processing batch ${i+1}/${batches.length} with ${batch.length} records`);
+      
+      const { data, error } = await supabase
+        .from('internships')
+        .insert(batch)
+        .select(); // Add select to get returned data
+      
+      if (error) {
+        console.error(`Error uploading batch ${i+1}:`, error);
+        throw error;
+      }
+      
+      console.log(`Successfully uploaded batch ${i+1}, received ${data?.length} records back`);
+    }
+    
+    console.log('All internships uploaded successfully');
+  } catch (error) {
+    console.error('Error in uploadMultipleInternships:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     throw error;
   }
 }

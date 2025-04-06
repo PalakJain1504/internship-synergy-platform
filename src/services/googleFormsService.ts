@@ -1,5 +1,4 @@
 
-// Google Forms Service
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { FormSettings } from '@/lib/types';
@@ -18,10 +17,9 @@ declare global {
   }
 }
 
-// Replace with your Google API credentials - make sure these match your Google Cloud setup
-const API_KEY = 'AIzaSyD2KHlyBMQajN4wETJqqDIobBJnQH6wWoY'; // Your API key
-const CLIENT_ID = '397462943494-fj4js6snhvf8q3aljits3e6jvp6oui4h.apps.googleusercontent.com'; // Your OAuth 2.0 client ID
-const REDIRECT_URI = 'http://localhost:8080/oauth2callback'; // Dynamic redirect URI
+// Your Google API credentials
+const API_KEY = 'AIzaSyD2KHlyBMQajN4wETJqqDIobBJnQH6wWoY'; 
+const CLIENT_ID = '397462943494-fj4js6snhvf8q3aljits3e6jvp6oui4h.apps.googleusercontent.com';
 
 // The API Discovery Document
 const DISCOVERY_DOCS = ["https://forms.googleapis.com/$discovery/rest?version=v1"];
@@ -38,7 +36,12 @@ let tokenClient: any = null;
 export const initGoogleApi = async (): Promise<void> => {
   try {
     console.log('Initializing Google API');
-    console.log('Current origin:', window.location.origin);
+    
+    // Get the current window URL for dynamic redirect
+    const currentOrigin = window.location.origin;
+    const REDIRECT_URI = `${currentOrigin}/oauth2callback`; 
+    console.log('Using redirect URI:', REDIRECT_URI);
+    
     // Check if script is already loaded
     if (!document.getElementById('gapi-script')) {
       // Load the Google API client script
@@ -60,10 +63,15 @@ export const initGoogleApi = async (): Promise<void> => {
       document.body.appendChild(script2);
     }
 
-    // Wait for scripts to load
-    await new Promise<void>((resolve) => {
+    // Wait for scripts to load with a timeout
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Timeout waiting for Google API scripts to load'));
+      }, 10000); // 10 second timeout
+      
       const checkGapiLoaded = () => {
-        if (window.gapi && window.google) {
+        if (window.gapi && window.google && window.google.accounts) {
+          clearTimeout(timeout);
           resolve();
         } else {
           setTimeout(checkGapiLoaded, 100);
@@ -75,22 +83,26 @@ export const initGoogleApi = async (): Promise<void> => {
     console.log('Google API scripts loaded');
 
     // Initialize GAPI client
-    await new Promise<void>((resolve) => {
-      window.gapi.load('client', async () => {
-        try {
-          await window.gapi.client.init({
-            apiKey: API_KEY,
-            discoveryDocs: DISCOVERY_DOCS,
-          });
-          console.log('GAPI client initialized');
-          gapiInitialized = true;
-          resolve();
-        } catch (error) {
-          console.error('Error initializing GAPI client:', error);
-          toast.error('Failed to initialize Google API client');
-          resolve();
-        }
-      });
+    await new Promise<void>((resolve, reject) => {
+      try {
+        window.gapi.load('client', async () => {
+          try {
+            await window.gapi.client.init({
+              apiKey: API_KEY,
+              discoveryDocs: DISCOVERY_DOCS,
+            });
+            console.log('GAPI client initialized successfully');
+            gapiInitialized = true;
+            resolve();
+          } catch (error) {
+            console.error('Error initializing GAPI client:', error);
+            reject(error);
+          }
+        });
+      } catch (error) {
+        console.error('Failed to load GAPI client:', error);
+        reject(error);
+      }
     });
 
     // Initialize Google Identity Services
@@ -98,6 +110,8 @@ export const initGoogleApi = async (): Promise<void> => {
       tokenClient = window.google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
+        prompt: 'consent',
+        redirect_uri: REDIRECT_URI,
         callback: (tokenResponse: any) => {
           if (tokenResponse && tokenResponse.access_token) {
             localStorage.setItem(TOKEN_KEY, tokenResponse.access_token);
@@ -106,16 +120,18 @@ export const initGoogleApi = async (): Promise<void> => {
         },
         error_callback: (error: any) => {
           console.error('Error getting OAuth token:', error);
-          toast.error('Failed to authenticate with Google');
+          toast.error('Failed to authenticate with Google: ' + (error.message || 'Unknown error'));
         }
       });
       console.log('Google Identity Services initialized');
     } else {
       console.error('Google Identity Services not available');
+      throw new Error('Google Identity Services not available');
     }
   } catch (error) {
     console.error('Error initializing Google API:', error);
-    toast.error('Failed to initialize Google API');
+    toast.error('Failed to initialize Google API: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    throw error;
   }
 };
 
@@ -126,14 +142,14 @@ export const handleOAuthCallback = (): void => {
   const code = urlParams.get('code');
   
   if (code) {
-    console.log('Authorization code received:', code);
+    console.log('Authorization code received');
     // Exchange code for token
     // This will be handled by Google Identity Services automatically
     // We just need to redirect back to the main page
     window.location.href = '/internship-portal';
   } else {
     console.error('No authorization code found in callback URL');
-    toast.error('Authentication failed');
+    toast.error('Authentication failed: No authorization code received');
     window.location.href = '/internship-portal';
   }
 };
@@ -147,7 +163,13 @@ export const isGoogleAuthenticated = (): boolean => {
 // Authenticate user with Google
 export const authenticateWithGoogle = async (): Promise<boolean> => {
   if (!gapiInitialized) {
-    await initGoogleApi();
+    try {
+      await initGoogleApi();
+    } catch (error) {
+      console.error('Failed to initialize Google API during authentication:', error);
+      toast.error('Failed to initialize Google API for authentication');
+      return false;
+    }
   }
 
   if (!tokenClient) {
@@ -160,38 +182,152 @@ export const authenticateWithGoogle = async (): Promise<boolean> => {
     console.log('Starting Google authentication flow');
     // Automatically open OAuth consent screen
     tokenClient.requestAccessToken({prompt: 'consent'});
+    // We don't get a return value here since it opens a popup
+    // The success/failure will be handled by the callback
     return true;
   } catch (error) {
     console.error('Error during Google authentication:', error);
-    toast.error('Failed to authenticate with Google');
+    toast.error('Failed to authenticate with Google: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    return false;
+  }
+};
+
+// Implementation of the addFormQuestions function for the FormCreator component
+export const addFormQuestions = async (formId: string, formSettings: FormSettings): Promise<boolean> => {
+  if (!gapiInitialized) {
+    try {
+      await initGoogleApi();
+    } catch (error) {
+      console.error('Failed to initialize Google API:', error);
+      toast.error('Failed to initialize Google API for adding questions');
+      return false;
+    }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) {
+    try {
+      const authenticated = await authenticateWithGoogle();
+      if (!authenticated) {
+        toast.error('Authentication required to add questions');
+        return false;
+      }
+      // Wait for auth callback to set token
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!localStorage.getItem(TOKEN_KEY)) {
+        toast.error('Failed to obtain authentication token');
+        return false;
+      }
+    } catch (error) {
+      console.error('Authentication failed:', error);
+      toast.error('Authentication failed');
+      return false;
+    }
+  }
+
+  try {
+    console.log(`Adding questions to form: ${formId}`);
+    
+    // Build form items based on included fields
+    const formItems = [];
+    
+    // Add standard fields
+    if (formSettings.includeFields.includes('rollNo')) {
+      formItems.push({
+        title: 'Roll Number',
+        questionItem: {
+          question: {
+            required: true,
+            textQuestion: {
+              paragraph: false
+            }
+          }
+        }
+      });
+    }
+    
+    if (formSettings.includeFields.includes('name')) {
+      formItems.push({
+        title: 'Full Name',
+        questionItem: {
+          question: {
+            required: true,
+            textQuestion: {
+              paragraph: false
+            }
+          }
+        }
+      });
+    }
+    
+    // Add the request to update the form
+    await window.gapi.client.request({
+      path: `https://forms.googleapis.com/v1/forms/${formId}/batchUpdate`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requests: formItems.map((item, index) => ({
+          createItem: {
+            item: item,
+            location: {
+              index: index + 1
+            }
+          }
+        }))
+      })
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error adding questions to form:', error);
+    toast.error('Failed to add questions to form');
     return false;
   }
 };
 
 // Create a Google Form
 export const createGoogleForm = async (formSettings: FormSettings): Promise<{ url: string } | null> => {
+  console.log('Starting to create Google Form');
+  
   if (!gapiInitialized) {
-    await initGoogleApi();
+    try {
+      await initGoogleApi();
+    } catch (error) {
+      console.error('Failed to initialize Google API during form creation:', error);
+      toast.error('Failed to initialize Google API. Please check console for details.');
+      return null;
+    }
   }
 
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) {
     console.log('No token found, starting authentication');
-    const authenticated = await authenticateWithGoogle();
-    if (!authenticated) {
-      toast.error('Authentication required to create forms');
-      return null;
-    }
-    // Wait for auth callback to set token
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    if (!localStorage.getItem(TOKEN_KEY)) {
-      toast.error('Failed to obtain authentication token');
+    try {
+      const authenticated = await authenticateWithGoogle();
+      if (!authenticated) {
+        toast.error('Authentication required to create forms');
+        return null;
+      }
+      // Wait for auth callback to set token
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!localStorage.getItem(TOKEN_KEY)) {
+        toast.error('Failed to obtain authentication token. Check console for details.');
+        return null;
+      }
+    } catch (error) {
+      console.error('Authentication failed:', error);
+      toast.error('Authentication failed. Please check console for details.');
       return null;
     }
   }
 
   try {
     console.log('Creating Google form with settings:', formSettings);
+    console.log('Using token:', localStorage.getItem(TOKEN_KEY)?.substring(0, 10) + '...');
+    
     // Create form with title
     const formResponse = await window.gapi.client.request({
       path: 'https://forms.googleapis.com/v1/forms',
@@ -285,6 +421,48 @@ export const createGoogleForm = async (formSettings: FormSettings): Promise<{ ur
       });
     }
     
+    if (formSettings.includeFields.includes('session')) {
+      formItems.push({
+        title: 'Session',
+        questionItem: {
+          question: {
+            required: true,
+            textQuestion: {
+              paragraph: false
+            }
+          }
+        }
+      });
+    }
+    
+    if (formSettings.includeFields.includes('year')) {
+      formItems.push({
+        title: 'Year',
+        questionItem: {
+          question: {
+            required: true,
+            textQuestion: {
+              paragraph: false
+            }
+          }
+        }
+      });
+    }
+    
+    if (formSettings.includeFields.includes('semester')) {
+      formItems.push({
+        title: 'Semester',
+        questionItem: {
+          question: {
+            required: true,
+            textQuestion: {
+              paragraph: false
+            }
+          }
+        }
+      });
+    }
+    
     // Add custom fields
     if (formSettings.customFields && formSettings.customFields.length > 0) {
       formSettings.customFields.forEach((field: string) => {
@@ -335,8 +513,21 @@ export const createGoogleForm = async (formSettings: FormSettings): Promise<{ ur
               }
             }
           });
+        } else if (field === 'pop') {
+          formItems.push({
+            title: 'Upload Proof of Participation',
+            questionItem: {
+              question: {
+                required: true,
+                fileUploadQuestion: {
+                  maxFiles: 1,
+                  maxFileSize: 10485760, // 10MB
+                  types: ['application/pdf']
+                }
+              }
+            }
+          });
         }
-        // Removed 'pop' option
       });
     }
     
@@ -426,39 +617,8 @@ export const createGoogleForm = async (formSettings: FormSettings): Promise<{ ur
     return { url: formUrl };
   } catch (error) {
     console.error('Error creating Google Form:', error);
-    toast.error('Failed to create Google Form');
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    toast.error('Failed to create Google Form. Please check console for details.');
     return null;
-  }
-};
-
-// Implementation of the addFormQuestions function
-export const addFormQuestions = async (formId: string, formSettings: FormSettings): Promise<boolean> => {
-  if (!gapiInitialized) {
-    await initGoogleApi();
-  }
-
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) {
-    const authenticated = await authenticateWithGoogle();
-    if (!authenticated) {
-      toast.error('Authentication required to add questions');
-      return false;
-    }
-  }
-
-  try {
-    console.log(`Adding questions to form: ${formId}`);
-    
-    // Add questions to an existing form
-    const formItems = [];
-    
-    // The logic here would be similar to createGoogleForm but just for adding questions
-    // We'll implement a basic version that returns true since createGoogleForm already handles adding questions
-    
-    return true;
-  } catch (error) {
-    console.error('Error adding questions to form:', error);
-    toast.error('Failed to add questions to form');
-    return false;
   }
 };

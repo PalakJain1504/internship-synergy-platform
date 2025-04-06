@@ -71,18 +71,6 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
     ? ['all-programs', ...new Set(availablePrograms)]
     : ['all-programs', 'BTech CSE', 'BTech CSE (FSD)', 'BTech CSE (UI/UX)', 'BTech AI/ML', 'BSc CS', 'BSc DS', 'BSc Cyber', 'BCA', 'BCA (AI/DS)'];
 
-  // Faculty coordinators list
-  const facultyCoordinators = [
-    'all-coordinators',
-    'Dr. Amit Kumar',
-    'Dr. Preeti Sharma',
-    'Dr. Neetu Singh',
-    'Dr. Rahul Gupta',
-    'Dr. Sunita Yadav',
-    'Dr. Rajesh Verma',
-    'Dr. Priya Patel'
-  ];
-
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
@@ -128,11 +116,14 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
                   <SelectValue placeholder="Select Faculty Coordinator" />
                 </SelectTrigger>
                 <SelectContent>
-                  {facultyCoordinators.map((coordinator) => (
-                    <SelectItem key={coordinator} value={coordinator}>
-                      {coordinator === 'all-coordinators' ? 'All Coordinators' : coordinator}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all-coordinators">All Coordinators</SelectItem>
+                  <SelectItem value="Dr. Amit Kumar">Dr. Amit Kumar</SelectItem>
+                  <SelectItem value="Dr. Preeti Sharma">Dr. Preeti Sharma</SelectItem>
+                  <SelectItem value="Dr. Neetu Singh">Dr. Neetu Singh</SelectItem>
+                  <SelectItem value="Dr. Rahul Gupta">Dr. Rahul Gupta</SelectItem>
+                  <SelectItem value="Dr. Sunita Yadav">Dr. Sunita Yadav</SelectItem>
+                  <SelectItem value="Dr. Rajesh Verma">Dr. Rajesh Verma</SelectItem>
+                  <SelectItem value="Dr. Priya Patel">Dr. Priya Patel</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -173,6 +164,27 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
                 </Select>
               </div>
 
+              <div className="space-y-1.5 mb-4">
+                <Label htmlFor="program">Program</Label>
+                <Select value={filters.program || ''} onValueChange={(value) => handleFilterChange('program', value)}>
+                  <SelectTrigger id="program">
+                    <SelectValue placeholder="Select Program" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all-programs">All Programs</SelectItem>
+                    <SelectItem value="BTech">B.Tech</SelectItem>
+                    <SelectItem value="BSc">B.Sc</SelectItem>
+                    {uniquePrograms.map((program) => (
+                      program !== 'all-programs' && !['BTech', 'BSc'].includes(program) && (
+                        <SelectItem key={program} value={program}>
+                          {program}
+                        </SelectItem>
+                      )
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {showSemester && (
                 <div className="space-y-1.5 mb-4">
                   <Label htmlFor="semester">Semester</Label>
@@ -191,25 +203,6 @@ const InternshipFilterSection: React.FC<FilterSectionProps> = ({
                   </Select>
                 </div>
               )}
-
-              <div className="space-y-1.5 mb-4">
-                <Label htmlFor="program">Program</Label>
-                <Select value={filters.program || ''} onValueChange={(value) => handleFilterChange('program', value)}>
-                  <SelectTrigger id="program">
-                    <SelectValue placeholder="Select Program" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-programs">All Programs</SelectItem>
-                    {uniquePrograms.map((program) => (
-                      program !== 'all-programs' && (
-                        <SelectItem key={program} value={program}>
-                          {program}
-                        </SelectItem>
-                      )
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </>
           )}
         </div>

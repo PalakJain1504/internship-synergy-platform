@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -75,19 +74,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
       });
     }
   }, [isOpen]);
-
-  // Update available semesters when year changes
-  useEffect(() => {
-    if (metadata.year) {
-      setAvailableSemesters(yearToSemesterMap[metadata.year] || []);
-      // If current selected semester is not in the available semesters, reset it
-      if (metadata.semester && !yearToSemesterMap[metadata.year]?.includes(metadata.semester)) {
-        setMetadata(prev => ({ ...prev, semester: '' }));
-      }
-    } else {
-      setAvailableSemesters(['1', '2', '3', '4', '5', '6', '7', '8']);
-    }
-  }, [metadata.year]);
 
   const parseExcelFile = async (excelFile: File) => {
     return new Promise<{headers: string[], rows: any[]}>((resolve, reject) => {
@@ -338,7 +324,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
     return originalHeader;
   };
 
-  // Function to normalize program names
   const normalizeProgram = (programName: string): string => {
     const lowerProgram = programName.toLowerCase().trim();
     
@@ -420,12 +405,12 @@ const UploadModal: React.FC<UploadModalProps> = ({
       rows.forEach((row, rowIndex) => {
         const entry: Record<string, string> = {
           id: `upload-${Date.now()}-${rowIndex}`,
-          year: metadata.year,
-          semester: metadata.semester,
-          session: metadata.session,
+          year: '',
+          semester: '',
+          session: '',
           rollNo: '',
           name: '',
-          program: metadata.program,
+          program: '',
         };
         
         if (portalType === 'project') {
@@ -476,9 +461,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
           
           if (yearCol !== -1 && row[yearCol]) {
             entry.year = String(row[yearCol]);
-          } else {
-            // Set default year from metadata
-            entry.year = metadata.year;
           }
         }
         
@@ -698,99 +680,28 @@ const UploadModal: React.FC<UploadModalProps> = ({
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-700">Metadata</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="session">Session*</Label>
-                <Input
-                  id="session"
-                  type="text"
-                  placeholder="e.g., 2024-2025"
-                  value={metadata.session}
-                  onChange={(e) => handleMetadataChange('session', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="year">Year*</Label>
+                <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
                 <Select
-                  value={metadata.year}
-                  onValueChange={(value) => handleMetadataChange('year', value)}
+                  value={metadata.facultyCoordinator || ''}
+                  onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}
                 >
-                  <SelectTrigger id="year">
-                    <SelectValue placeholder="Select Year" />
+                  <SelectTrigger id="facultyCoordinator">
+                    <SelectValue placeholder="Select Coordinator" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="all-coordinators">All Coordinators</SelectItem>
+                    <SelectItem value="Dr. Amit Kumar">Dr. Amit Kumar</SelectItem>
+                    <SelectItem value="Dr. Preeti Sharma">Dr. Preeti Sharma</SelectItem>
+                    <SelectItem value="Dr. Neetu Singh">Dr. Neetu Singh</SelectItem>
+                    <SelectItem value="Dr. Rahul Gupta">Dr. Rahul Gupta</SelectItem>
+                    <SelectItem value="Dr. Sunita Yadav">Dr. Sunita Yadav</SelectItem>
+                    <SelectItem value="Dr. Rajesh Verma">Dr. Rajesh Verma</SelectItem>
+                    <SelectItem value="Dr. Priya Patel">Dr. Priya Patel</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              {portalType === 'project' && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="semester">Semester*</Label>
-                  <Select
-                    value={metadata.semester}
-                    onValueChange={(value) => handleMetadataChange('semester', value)}
-                  >
-                    <SelectTrigger id="semester">
-                      <SelectValue placeholder="Select Semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSemesters.map(semester => (
-                        <SelectItem key={semester} value={semester}>{semester}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="program">Program</Label>
-                <Select
-                  value={metadata.program}
-                  onValueChange={(value) => handleMetadataChange('program', value)}
-                >
-                  <SelectTrigger id="program">
-                    <SelectValue placeholder="Select Program" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availablePrograms.map((group) => (
-                      <React.Fragment key={group.group}>
-                        <SelectItem value={group.group} disabled>{group.group}</SelectItem>
-                        {group.options.map(option => (
-                          <SelectItem key={option} value={option} className="pl-6">
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </React.Fragment>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {(!showOnlyFacultyCoordinator || portalType === 'project') && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
-                  <Select
-                    value={metadata.facultyCoordinator || ''}
-                    onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}
-                  >
-                    <SelectTrigger id="facultyCoordinator">
-                      <SelectValue placeholder="Select Coordinator" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-coordinators">All Coordinators</SelectItem>
-                      <SelectItem value="Dr. Pankaj">Dr. Pankaj</SelectItem>
-                      <SelectItem value="Dr. Meenu">Dr. Meenu</SelectItem>
-                      <SelectItem value="Dr. Swati">Dr. Swati</SelectItem>
-                      <SelectItem value="Dr. Anshu">Dr. Anshu</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
           </div>
 
@@ -818,12 +729,12 @@ const UploadModal: React.FC<UploadModalProps> = ({
                       r="10"
                       stroke="currentColor"
                       strokeWidth="4"
-                    ></circle>
+                    />
                     <path
                       className="opacity-75"
                       fill="currentColor"
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
+                    />
                   </svg>
                   Uploading...
                 </>
