@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { InternshipData } from '@/lib/types';
 
@@ -13,7 +14,26 @@ export const fetchInternships = async (): Promise<InternshipData[]> => {
       throw error;
     }
 
-    return data as InternshipData[];
+    // Transform the data to match the InternshipData interface
+    const formattedData: InternshipData[] = data.map(item => ({
+      id: item.id,
+      rollNo: item.roll_no || '',
+      name: item.name || '',
+      program: item.program || '',
+      organization: item.organization || '',
+      dates: item.dates || '',
+      noc: item.noc || '',
+      offerLetter: item.offer_letter || '',
+      pop: item.pop || '',
+      year: item.year || '',
+      semester: item.semester || '',
+      session: item.session || '',
+      faculty_coordinator: typeof item.faculty_coordinator === 'boolean' 
+        ? String(item.faculty_coordinator) 
+        : (item.faculty_coordinator || '')
+    }));
+
+    return formattedData;
   } catch (error) {
     console.error('Error fetching internships:', error);
     throw error;
@@ -46,7 +66,7 @@ export const uploadInternship = async (internship: InternshipData): Promise<{ su
         year: formattedInternship.year,
         semester: formattedInternship.semester,
         session: formattedInternship.session,
-        faculty_coordinator: String(formattedInternship.faculty_coordinator)
+        faculty_coordinator: String(formattedInternship.faculty_coordinator || '')
       });
 
     if (error) throw error;
@@ -75,17 +95,39 @@ export const uploadMultipleInternships = async (internships: InternshipData[]): 
       session: internship.session,
       faculty_coordinator: typeof internship.faculty_coordinator === 'boolean' 
         ? String(internship.faculty_coordinator) 
-        : String(internship.faculty_coordinator)
+        : String(internship.faculty_coordinator || '')
     }));
+
+    // Log internships for debugging
+    console.log('Uploading formatted internships:', formattedInternships);
 
     const { error } = await supabase
       .from('internships')
       .insert(formattedInternships);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error when uploading internships:', error);
+      throw error;
+    }
     return { success: true };
   } catch (error) {
     console.error('Error uploading multiple internships to Supabase:', error);
     return { success: false, error };
   }
 };
+
+// Create an edge function for Google Forms integration
+export const setupGoogleFormsIntegration = async (): Promise<{ success: boolean, message: string }> => {
+  try {
+    const result = await supabase.functions.invoke('google-forms-integration', {
+      body: { action: 'setup' }
+    });
+    
+    if (result.error) throw new Error(result.error.message);
+    return { success: true, message: 'Google Forms integration set up successfully' };
+  } catch (error) {
+    console.error('Error setting up Google Forms integration:', error);
+    return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+

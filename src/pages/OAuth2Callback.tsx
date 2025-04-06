@@ -11,7 +11,8 @@ const OAuth2Callback = () => {
     // Process the OAuth callback when the component mounts
     const processCallback = async () => {
       try {
-        handleOAuthCallback();
+        setStatus('Exchanging authorization code for token...');
+        await handleOAuthCallback();
         setStatus('Authentication successful! Redirecting...');
         
         // Redirect after a short delay
