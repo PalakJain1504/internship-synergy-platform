@@ -1,3 +1,7 @@
 
 // Assets index file
-export {};
+import universityLogo from './university-logo.png';
+
+export {
+  universityLogo
+};

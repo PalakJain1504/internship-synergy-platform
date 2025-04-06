@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Menu, X, LogOut, Home } from 'lucide-react';
-import universityLogo from '@/assets/university-logo.png';
+import { universityLogo } from '@/assets';
 
 interface NavbarProps {
   showAuthButtons?: boolean;
