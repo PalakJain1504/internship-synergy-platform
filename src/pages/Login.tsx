@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
+import { universityLogo } from '@/assets';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -71,14 +72,13 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Button
-        variant="ghost"
-        className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"
-        onClick={() => navigate('/')}
+      <Link
+        to="/"
+        className="absolute top-4 left-4 text-gray-500 hover:text-gray-700 flex items-center"
       >
         <ArrowLeft className="h-5 w-5 mr-1" />
         Back
-      </Button>
+      </Link>
       
       <motion.div 
         className="w-full max-w-md space-y-8 bg-white p-8 rounded-lg shadow-sm border border-gray-100"
@@ -87,10 +87,8 @@ const Login = () => {
         animate="visible"
       >
         <motion.div variants={itemVariants} className="text-center">
-          <div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-brand-blue to-blue-600 flex items-center justify-center shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
+          <div className="mx-auto h-20 w-20 rounded-full bg-white flex items-center justify-center shadow-md border border-gray-200">
+            <img src={universityLogo} alt="University Logo" className="h-16 w-16 object-contain" />
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Welcome back</h2>
           <p className="mt-2 text-sm text-gray-600">

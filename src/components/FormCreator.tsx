@@ -1,435 +1,340 @@
 import React, { useState } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Plus, X, FileText, Loader2 } from 'lucide-react';
-import { FormSettings } from '@/lib/types';
-import { createGoogleForm, initGoogleApi, addFormQuestions } from '@/services/googleFormsService';
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { initiateGoogleAuth } from '@/services/googleFormsService';
 
 interface FormCreatorProps {
   isOpen: boolean;
   onClose: () => void;
   portalType: 'project' | 'internship';
-  onFormCreated: (formSettings: FormSettings, formUrl: string) => void;
+  onFormCreated: (formSettings: any, formUrl: string) => void;
 }
 
-const projectBaseFields = [
-  'groupNo', 'rollNo', 'name', 'email', 'phoneNo', 'title', 
-  'domain', 'facultyMentor', 'industryMentor', 'facultyCoordinator'
-];
+const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, onFormCreated }) => {
+  const [isCreating, setIsCreating] = useState(false);
 
-const internshipBaseFields = [
-  'rollNo', 'name', 'program', 'organization', 'dates', 'session', 'year', 'semester'
-];
+  const formSchema = z.object({
+    title: z.string().min(2, {
+      message: "Form title must be at least 2 characters.",
+    }),
+    session: z.string().min(2, {
+      message: "Session must be at least 2 characters.",
+    }),
+    year: z.string().min(1, {
+      message: "Year must be at least 1 characters.",
+    }),
+    semester: z.string().min(1, {
+      message: "Semester must be at least 1 characters.",
+    }),
+    program: z.string().min(2, {
+      message: "Program must be at least 2 characters.",
+    }),
+    minStudents: z.number().min(1, {
+      message: "Min students must be at least 1.",
+    }),
+    maxStudents: z.number().min(1, {
+      message: "Max students must be at least 1.",
+    }),
+    includeFields: z.array(z.string()),
+    pdfFields: z.array(z.string()),
+    customFields: z.array(z.string()),
+  })
 
-const projectPdfFields = ['form', 'presentation', 'report'];
-const internshipPdfFields = ['noc', 'offerLetter', 'pop'];
+  const defaultSettings = {
+    portalType,
+    title: '',
+    session: '',
+    year: '',
+    semester: '',
+    program: '',
+    minStudents: 1,
+    maxStudents: 1,
+    includeFields: portalType === 'project' ? 
+      ['rollNo', 'name', 'email', 'phoneNo', 'groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor'] : 
+      ['rollNo', 'name', 'program', 'organization', 'dates', 'year', 'semester', 'session'],
+    pdfFields: portalType === 'project' ? 
+      ['form', 'presentation', 'report'] : 
+      ['noc', 'offerLetter', 'pop'],
+    customFields: [],
+  };
 
-const fieldLabels: Record<string, string> = {
-  groupNo: 'Group Number',
-  rollNo: 'Roll Number',
-  name: 'Student Name',
-  email: 'Email',
-  phoneNo: 'Phone Number',
-  title: 'Project Title',
-  domain: 'Domain',
-  facultyMentor: 'Faculty Mentor',
-  industryMentor: 'Industry Mentor',
-  facultyCoordinator: 'Faculty Coordinator',
-  program: 'Program',
-  organization: 'Organization',
-  dates: 'Dates',
-  form: 'Form Document',
-  presentation: 'Presentation',
-  report: 'Report',
-  noc: 'NOC',
-  offerLetter: 'Offer Letter',
-  pop: 'Proof of Participation',
-  session: 'Session',
-  year: 'Year',
-  semester: 'Semester'
-};
-
-const formSchema = z.object({
-  title: z.string().min(1, "Form title is required"),
-  session: z.string().min(1, "Session is required"),
-  year: z.string().min(1, "Year is required"),
-  semester: z.string().min(1, "Semester is required"),
-  program: z.string().optional(),
-  minStudents: z.coerce.number().min(1, "Minimum students must be at least 1").default(1),
-  maxStudents: z.coerce.number().min(1, "Maximum students must be at least 1").default(4),
-  newFieldName: z.string().optional(),
-});
-
-const FormCreator: React.FC<FormCreatorProps> = ({
-  isOpen, 
-  onClose, 
-  portalType, 
-  onFormCreated
-}) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: `${portalType === 'project' ? 'Project' : 'Internship'} Submission Form`,
-      session: '',
-      year: '',
-      semester: '',
-      program: '',
-      minStudents: 1,
-      maxStudents: 4,
-      newFieldName: '',
-    },
-  });
-
-  const baseFields = portalType === 'project' ? projectBaseFields : internshipBaseFields;
-  const pdfFields = portalType === 'project' ? projectPdfFields : internshipPdfFields;
-  
-  const [selectedFields, setSelectedFields] = useState<string[]>(baseFields);
-  const [selectedPdfFields, setSelectedPdfFields] = useState<string[]>(pdfFields);
-  const [customFields, setCustomFields] = useState<string[]>([]);
-  const [newCustomField, setNewCustomField] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-  const addCustomField = () => {
-    if (!newCustomField.trim()) return;
-
-    if ([...baseFields, ...customFields].includes(newCustomField)) {
-      toast.error('This field already exists');
-      return;
-    }
-
-    setCustomFields([...customFields, newCustomField]);
-    setSelectedFields([...selectedFields, newCustomField]);
-    setNewCustomField('');
-  };
-
-  const toggleField = (field: string) => {
-    if (selectedFields.includes(field)) {
-      setSelectedFields(selectedFields.filter(f => f !== field));
-    } else {
-      setSelectedFields([...selectedFields, field]);
-    }
-  };
-
-  const togglePdfField = (field: string) => {
-    if (selectedPdfFields.includes(field)) {
-      setSelectedPdfFields(selectedPdfFields.filter(f => f !== field));
-    } else {
-      setSelectedPdfFields([...selectedPdfFields, field]);
-    }
-  };
+    defaultValues: defaultSettings,
+    mode: "onChange"
+  })
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (selectedFields.length === 0) {
-      toast.error('Please select at least one field');
-      return;
-    }
-
-    if (selectedPdfFields.length === 0) {
-      toast.error('Please select at least one PDF field');
-      return;
-    }
-
+    setIsCreating(true);
     try {
-      await initGoogleApi();
-    } catch (error) {
-      console.error('Failed to initialize Google API:', error);
-      toast.error('Failed to initialize Google API client. Please check console for details.');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const formSettings: FormSettings = {
-        portalType,
-        title: values.title,
-        session: values.session,
-        year: values.year,
-        semester: values.semester,
-        program: values.program,
-        minStudents: values.minStudents || 1,
-        maxStudents: values.maxStudents || 4,
-        includeFields: selectedFields,
-        pdfFields: selectedPdfFields,
-        customFields,
-      };
-
-      console.log('Creating form with settings:', formSettings);
-      const response = await createGoogleForm(formSettings);
-
-      if (!response) {
-        toast.error('Failed to create form. Please check console for details.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      toast.success('Form created successfully!');
-      onFormCreated(formSettings, response.url);
+      const authUrl = await initiateGoogleAuth(values);
+      window.location.href = authUrl;
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating form:', error);
-      toast.error('Failed to create form. Please try again or check console for details.');
+      alert(`Failed to create form: ${error.message}`);
     } finally {
-      setIsSubmitting(false);
+      setIsCreating(false);
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create {portalType === 'project' ? 'Project' : 'Internship'} Submission Form</DialogTitle>
-          <DialogDescription>
-            Generate a Google Form for data collection. Select the fields you want to include.
-          </DialogDescription>
-        </DialogHeader>
-        
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent className="sm:max-w-3xl">
+        <SheetHeader>
+          <SheetTitle>Create New Form</SheetTitle>
+          <SheetDescription>
+            Create a new Google Form to collect data for {portalType} portal.
+          </SheetDescription>
+        </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Form Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter form title" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="session"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Session</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 2024-2025" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="year"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Year</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 3" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="semester"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Semester</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 6" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="program"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Program</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., BTech CSE" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Form Title</FormLabel>
+                  <FormDescription>
+                    Give your form a clear and descriptive title.
+                  </FormDescription>
+                  <FormControl>
+                    <Input placeholder="Project Data Collection" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="session"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Session</FormLabel>
+                  <FormDescription>
+                    Enter the session for which this form is valid.
+                  </FormDescription>
+                  <FormControl>
+                    <Input placeholder="2023-2024" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Year</FormLabel>
+                  <FormDescription>
+                    Enter the year for which this form is valid.
+                  </FormDescription>
+                  <FormControl>
+                    <Input placeholder="4" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="semester"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Semester</FormLabel>
+                  <FormDescription>
+                    Enter the semester for which this form is valid.
+                  </FormDescription>
+                  <FormControl>
+                    <Input placeholder="8" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="program"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Program</FormLabel>
+                  <FormDescription>
+                    Enter the program for which this form is valid.
+                  </FormDescription>
+                  <FormControl>
+                    <Input placeholder="B.Tech CSE" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {portalType === 'project' && (
-              <div className="border rounded-md p-4 bg-gray-50">
-                <h3 className="text-base font-medium mb-3">Group Configuration</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="minStudents"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Minimum Students per Group</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1" 
-                            placeholder="e.g., 1" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="maxStudents"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Maximum Students per Group</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1"
-                            placeholder="e.g., 4" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
+              <>
+                <FormField
+                  control={form.control}
+                  name="minStudents"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Min Students per Group</FormLabel>
+                      <FormDescription>
+                        Minimum number of students allowed in each group.
+                      </FormDescription>
+                      <FormControl>
+                        <Input type="number" defaultValue={1} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="maxStudents"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Max Students per Group</FormLabel>
+                      <FormDescription>
+                        Maximum number of students allowed in each group.
+                      </FormDescription>
+                      <FormControl>
+                        <Input type="number" defaultValue={1} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
-            
-            <div>
-              <h3 className="text-base font-medium mb-2">Base Fields</h3>
-              <div className="border rounded-md p-4 bg-gray-50">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {baseFields.map((field) => (
-                    <div key={field} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`field-${field}`} 
-                        checked={selectedFields.includes(field)}
-                        onCheckedChange={() => toggleField(field)}
-                      />
-                      <Label htmlFor={`field-${field}`}>{fieldLabels[field] || field}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-base font-medium mb-2">PDF File Upload Fields</h3>
-              <div className="border rounded-md p-4 bg-gray-50">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {pdfFields.map((field) => (
-                    <div key={field} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`pdf-${field}`} 
-                        checked={selectedPdfFields.includes(field)}
-                        onCheckedChange={() => togglePdfField(field)}
-                      />
-                      <Label htmlFor={`pdf-${field}`}>{fieldLabels[field] || field}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-base font-medium mb-2">Custom Fields</h3>
-              <div className="border rounded-md p-4 bg-gray-50">
-                {customFields.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-                    {customFields.map((field) => (
-                      <div key={field} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`custom-${field}`} 
-                          checked={selectedFields.includes(field)}
-                          onCheckedChange={() => toggleField(field)}
-                        />
-                        <Label htmlFor={`custom-${field}`}>{field}</Label>
-                        <Button 
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-gray-500"
-                          onClick={() => {
-                            setCustomFields(customFields.filter(f => f !== field));
-                            setSelectedFields(selectedFields.filter(f => f !== field));
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 mb-4">No custom fields added yet.</p>
-                )}
-                
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="New field name"
-                    value={newCustomField}
-                    onChange={(e) => setNewCustomField(e.target.value)}
-                    className="text-sm"
+            <div className="flex flex-col space-y-4">
+              <Label>Base Fields</Label>
+              <FormDescription>
+                Select the base fields you want to include in the form.
+              </FormDescription>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {['rollNo', 'name', 'email', 'phoneNo', 'groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor', 'organization', 'dates', 'program', 'year', 'semester', 'session'].map((field) => (
+                  <FormField
+                    key={field}
+                    control={form.control}
+                    name="includeFields"
+                    render={({ field: { value, onChange } }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3 shadow-sm">
+                        <FormLabel className="text-sm font-normal">
+                          {field === 'rollNo' ? 'Roll Number' :
+                            field === 'name' ? 'Student Name' :
+                              field === 'email' ? 'Email' :
+                                field === 'phoneNo' ? 'Phone Number' :
+                                  field === 'groupNo' ? 'Group Number' :
+                                    field === 'title' ? 'Project Title' :
+                                      field === 'domain' ? 'Project Domain' :
+                                        field === 'facultyMentor' ? 'Faculty Mentor' :
+                                          field === 'industryMentor' ? 'Industry Mentor' :
+                                            field === 'organization' ? 'Organization' :
+                                              field === 'dates' ? 'Internship Dates' :
+                                                field === 'program' ? 'Program' :
+                                                  field === 'year' ? 'Year' :
+                                                    field === 'semester' ? 'Semester' :
+                                                      field === 'session' ? 'Session' :
+                                                        field}
+                        </FormLabel>
+                        <FormControl>
+                          <Switch
+                            checked={value?.includes(field)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                onChange([...value, field])
+                              } else {
+                                onChange(value?.filter((v) => v !== field))
+                              }
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
                   />
-                  <Button type="button" onClick={addCustomField} size="sm">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
-                </div>
+                ))}
               </div>
             </div>
-            
-            <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Create Form
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
+            <div className="flex flex-col space-y-4">
+              <Label>PDF File Upload Fields</Label>
+              <FormDescription>
+                Select which PDF file upload fields you want to include.
+              </FormDescription>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {formSettings.pdfFields.map((field) => (
+                  <FormField
+                    key={field}
+                    control={form.control}
+                    name={`pdfFields.${field}`}
+                    render={({ field: { value, onChange } }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {field === 'form' ? 'Project Proposal Form' : 
+                           field === 'presentation' ? 'Final Presentation' : 
+                           field === 'report' ? 'Project Report' : 
+                           field === 'noc' ? 'No Objection Certificate' : 
+                           field === 'offerLetter' ? 'Offer Letter' : 
+                           field === 'pop' ? 'POP' : 
+                           field}
+                        </FormLabel>
+                        <FormDescription>
+                          {field === 'form' ? 'PDF of project proposal form' : 
+                           field === 'presentation' ? 'PPT or PDF of final presentation' : 
+                           field === 'report' ? 'PDF of project report' : 
+                           field === 'noc' ? 'PDF of No Objection Certificate' : 
+                           field === 'offerLetter' ? 'PDF of offer letter' : 
+                           field === 'pop' ? 'PDF of proof of participation' : 
+                           `Upload ${field}`}
+                        </FormDescription>
+                        <FormControl>
+                          <Switch
+                            checked={value}
+                            onCheckedChange={onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+            <Button type="submit" disabled={isCreating}>
+              {isCreating ? "Creating..." : "Create Form"}
+            </Button>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 };
 

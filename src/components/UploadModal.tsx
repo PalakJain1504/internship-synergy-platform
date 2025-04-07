@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -52,7 +51,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
     { group: 'BCA', options: ['BCA', 'BCA (AI/DS)']}
   ]);
 
-  // Mapping for year to semesters
   const yearToSemesterMap: Record<string, string[]> = {
     '1': ['1', '2'],
     '2': ['3', '4'],
@@ -142,7 +140,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
     
     console.log(`Has Roll Number: ${hasRollNumber}, Has Name: ${hasName}`);
     
-    // Return true even if missing - we'll generate defaults
     return true;
   };
 
@@ -179,11 +176,9 @@ const UploadModal: React.FC<UploadModalProps> = ({
           missingRequired: !hasRequiredFields
         });
         
-        // Try to extract year from the data
         const yearPattern = /20\d{2}[-/]20\d{2}/;
         let yearValue = '';
         
-        // Check if any header looks like a session year
         for (const header of headers) {
           if (header && yearPattern.test(header.toString())) {
             yearValue = header.toString().match(yearPattern)?.[0] || '';
@@ -191,7 +186,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
           }
         }
         
-        // If no year found in headers, check first few rows for session pattern
         if (!yearValue) {
           for (let i = 0; i < Math.min(3, rows.length); i++) {
             for (const cell of rows[i]) {
@@ -204,7 +198,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
           }
         }
         
-        // Update session metadata if year was found
         if (yearValue) {
           setMetadata(prev => ({
             ...prev,
@@ -329,7 +322,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
   const normalizeProgram = (programName: string): string => {
     const lowerProgram = programName.toLowerCase().trim();
     
-    // BTech variations
     if (lowerProgram.includes('btech') || lowerProgram.includes('b.tech')) {
       if (lowerProgram.includes('fsd') || lowerProgram.includes('full stack')) {
         return 'BTech CSE (FSD)';
@@ -342,7 +334,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
       }
     }
     
-    // BSc variations
     if (lowerProgram.includes('bsc') || lowerProgram.includes('b.sc')) {
       if (lowerProgram.includes('data') || lowerProgram.includes('ds')) {
         return 'BSc DS';
@@ -353,7 +344,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
       }
     }
     
-    // BCA variations
     if (lowerProgram.includes('bca') || lowerProgram.includes('b.c.a')) {
       if (lowerProgram.includes('ai') || lowerProgram.includes('data') || lowerProgram.includes('ds')) {
         return 'BCA (AI/DS)';
@@ -362,7 +352,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
       }
     }
     
-    return programName; // Return as is if no match found
+    return programName;
   };
 
   const handleUpload = async () => {
@@ -371,13 +361,11 @@ const UploadModal: React.FC<UploadModalProps> = ({
       return;
     }
     
-    // For internship portal, only faculty coordinator is required
     if (portalType === 'internship' && !metadata.facultyCoordinator) {
       toast.error('Please select a Faculty Coordinator');
       return;
     }
     
-    // For project portal, more fields are required
     if (portalType === 'project' && (!metadata.facultyCoordinator)) {
       toast.error('Please select a Faculty Coordinator');
       return;
@@ -403,7 +391,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
         console.log(`Mapped column "${header}" (index ${index}) to field "${normalizedFieldName}"`);
       });
       
-      // Organize entries by group (for project portal)
       const groupMap = new Map<string, any[]>();
       
       rows.forEach((row, rowIndex) => {
@@ -440,14 +427,12 @@ const UploadModal: React.FC<UploadModalProps> = ({
           entry.facultyCoordinator = metadata.facultyCoordinator;
         }
         
-        // First, map data from the columns using our field mapping
         for (let colIndex = 0; colIndex < headers.length; colIndex++) {
           const fieldName = fieldMapping.get(colIndex);
           
           if (fieldName && row[colIndex] !== undefined && row[colIndex] !== null) {
             entry[fieldName] = String(row[colIndex]);
             
-            // Normalize program field if it exists
             if (fieldName === 'program' && entry.program) {
               entry.program = normalizeProgram(entry.program);
             }
@@ -456,7 +441,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
           }
         }
         
-        // Try to extract year from row data if not already set
         if (!entry.year && metadata.year) {
           entry.year = metadata.year;
         }
@@ -469,7 +453,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
           entry.session = metadata.session;
         }
         
-        // If we still don't have roll number, try to infer it
         if (!entry.rollNo || entry.rollNo.trim() === '') {
           const potentialRollColumns = [1, 2, 3];
           for (const col of potentialRollColumns) {
@@ -484,7 +467,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
           }
         }
         
-        // If we still don't have name, try to infer it
         if (!entry.name || entry.name.trim() === '') {
           const potentialNameColumns = [2, 3, 4];
           for (const col of potentialNameColumns) {
@@ -499,7 +481,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
           }
         }
         
-        // Set defaults if still missing
         if (!entry.rollNo || entry.rollNo.trim() === '') {
           entry.rollNo = `R${rowIndex + 1000}`;
           console.log(`Generated default rollNo = ${entry.rollNo}`);
@@ -510,7 +491,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
           console.log(`Generated default name = ${entry.name}`);
         }
         
-        // For project portal, organize by groups
         if (portalType === 'project') {
           const groupKey = entry.groupNo || 'unknown';
           if (!groupMap.has(groupKey)) {
@@ -518,18 +498,15 @@ const UploadModal: React.FC<UploadModalProps> = ({
           }
           groupMap.get(groupKey)?.push(entry);
         } else {
-          // For internship portal, just add to the group map with a unique key
           const uniqueKey = `${entry.rollNo}-${rowIndex}`;
           groupMap.set(uniqueKey, [entry]);
         }
       });
       
-      // Process groups (for project portal)
       const finalEntries: any[] = [];
       
       groupMap.forEach((groupEntries, groupKey) => {
         if (portalType === 'project' && groupEntries.length > 0) {
-          // For project portal, copy group-level fields from the first entry to all entries
           const groupFields = ['groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor'];
           const firstEntry = groupEntries[0];
           
@@ -544,7 +521,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
             finalEntries.push(entry);
           });
         } else {
-          // For internship portal, just add each entry
           groupEntries.forEach(entry => {
             finalEntries.push(entry);
           });
@@ -553,7 +529,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
 
       console.log(`Successfully processed ${finalEntries.length} entries:`, finalEntries);
       
-      // Upload entries to Supabase
       if (finalEntries.length > 0) {
         try {
           const result = await onUpload(finalEntries as any, metadata);
@@ -578,6 +553,160 @@ const UploadModal: React.FC<UploadModalProps> = ({
     }
   };
 
+  const renderMetadata = () => {
+    if (portalType === 'internship' && showOnlyFacultyCoordinator) {
+      return (
+        <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
+            <Select
+              value={metadata.facultyCoordinator || ''}
+              onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}
+            >
+              <SelectTrigger id="facultyCoordinator">
+                <SelectValue placeholder="Select Coordinator" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-coordinators">All Coordinators</SelectItem>
+                <SelectItem value="Dr. Pankaj">Dr. Pankaj</SelectItem>
+                <SelectItem value="Dr. Anshu">Dr. Anshu</SelectItem>
+                <SelectItem value="Dr. Meenu">Dr. Meenu</SelectItem>
+                <SelectItem value="Dr. Swati">Dr. Swati</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      );
+    } else if (portalType === 'project') {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
+            <Select
+              value={metadata.facultyCoordinator || ''}
+              onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}
+            >
+              <SelectTrigger id="facultyCoordinator">
+                <SelectValue placeholder="Select Coordinator" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-coordinators">All Coordinators</SelectItem>
+                <SelectItem value="Dr. Pankaj">Dr. Pankaj</SelectItem>
+                <SelectItem value="Dr. Anshu">Dr. Anshu</SelectItem>
+                <SelectItem value="Dr. Meenu">Dr. Meenu</SelectItem>
+                <SelectItem value="Dr. Swati">Dr. Swati</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-1.5">
+            <Label htmlFor="year">Year</Label>
+            <Select
+              value={metadata.year || ''}
+              onValueChange={(value) => handleMetadataChange('year', value)}
+            >
+              <SelectTrigger id="year">
+                <SelectValue placeholder="Select Year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1</SelectItem>
+                <SelectItem value="2">2</SelectItem>
+                <SelectItem value="3">3</SelectItem>
+                <SelectItem value="4">4</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-1.5">
+            <Label htmlFor="semester">Semester</Label>
+            <Select
+              value={metadata.semester || ''}
+              onValueChange={(value) => handleMetadataChange('semester', value)}
+            >
+              <SelectTrigger id="semester">
+                <SelectValue placeholder="Select Semester" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1</SelectItem>
+                <SelectItem value="2">2</SelectItem>
+                <SelectItem value="3">3</SelectItem>
+                <SelectItem value="4">4</SelectItem>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="6">6</SelectItem>
+                <SelectItem value="7">7</SelectItem>
+                <SelectItem value="8">8</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-1.5">
+            <Label htmlFor="session">Session</Label>
+            <Select
+              value={metadata.session || ''}
+              onValueChange={(value) => handleMetadataChange('session', value)}
+            >
+              <SelectTrigger id="session">
+                <SelectValue placeholder="Select Session" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2022-2023">2022-2023</SelectItem>
+                <SelectItem value="2023-2024">2023-2024</SelectItem>
+                <SelectItem value="2024-2025">2024-2025</SelectItem>
+                <SelectItem value="2025-2026">2025-2026</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-1.5">
+            <Label htmlFor="program">Program</Label>
+            <Select
+              value={metadata.program || ''}
+              onValueChange={(value) => handleMetadataChange('program', value)}
+            >
+              <SelectTrigger id="program">
+                <SelectValue placeholder="Select Program" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="BTech CSE">BTech CSE</SelectItem>
+                <SelectItem value="BTech CSE (FSD)">BTech CSE (FSD)</SelectItem>
+                <SelectItem value="BTech CSE (UI/UX)">BTech CSE (UI/UX)</SelectItem>
+                <SelectItem value="BTech AI/ML">BTech AI/ML</SelectItem>
+                <SelectItem value="BSc CS">BSc CS</SelectItem>
+                <SelectItem value="BSc DS">BSc DS</SelectItem>
+                <SelectItem value="BSc Cyber">BSc Cyber</SelectItem>
+                <SelectItem value="BCA">BCA</SelectItem>
+                <SelectItem value="BCA (AI/DS)">BCA (AI/DS)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
+            <Select
+              value={metadata.facultyCoordinator || ''}
+              onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}
+            >
+              <SelectTrigger id="facultyCoordinator">
+                <SelectValue placeholder="Select Coordinator" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-coordinators">All Coordinators</SelectItem>
+                <SelectItem value="Dr. Pankaj">Dr. Pankaj</SelectItem>
+                <SelectItem value="Dr. Anshu">Dr. Anshu</SelectItem>
+                <SelectItem value="Dr. Meenu">Dr. Meenu</SelectItem>
+                <SelectItem value="Dr. Swati">Dr. Swati</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      );
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -591,7 +720,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
         </div>
 
         <div className="space-y-6">
-          {/* Add Excel Format Guide */}
           <ExcelFormatGuide portalType={portalType} />
           
           <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
@@ -699,30 +827,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
 
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-700">Metadata</h3>
-            
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="facultyCoordinator">Faculty Coordinator</Label>
-                <Select
-                  value={metadata.facultyCoordinator || ''}
-                  onValueChange={(value) => handleMetadataChange('facultyCoordinator', value)}
-                >
-                  <SelectTrigger id="facultyCoordinator">
-                    <SelectValue placeholder="Select Coordinator" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-coordinators">All Coordinators</SelectItem>
-                    <SelectItem value="Dr. Amit Kumar">Dr. Amit Kumar</SelectItem>
-                    <SelectItem value="Dr. Preeti Sharma">Dr. Preeti Sharma</SelectItem>
-                    <SelectItem value="Dr. Neetu Singh">Dr. Neetu Singh</SelectItem>
-                    <SelectItem value="Dr. Rahul Gupta">Dr. Rahul Gupta</SelectItem>
-                    <SelectItem value="Dr. Sunita Yadav">Dr. Sunita Yadav</SelectItem>
-                    <SelectItem value="Dr. Rajesh Verma">Dr. Rajesh Verma</SelectItem>
-                    <SelectItem value="Dr. Priya Patel">Dr. Priya Patel</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {renderMetadata()}
           </div>
 
           <div className="pt-4 border-t border-gray-100 flex justify-end space-x-3">
