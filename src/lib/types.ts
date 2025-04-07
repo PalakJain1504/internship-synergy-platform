@@ -35,12 +35,15 @@ export interface InternshipData {
   program: string;
   organization: string;
   dates: string;
+  internshipDuration?: string;
+  mobileNumber?: string;
   noc: string;
   offerLetter: string;
   pop: string;
   year: string;
   semester: string;
   session: string;
+  faculty_coordinator?: string;
   isEditing?: boolean;
   isNew?: boolean;
   [key: string]: string | boolean | undefined; // Update for dynamic attendance columns
@@ -61,7 +64,7 @@ export interface FormSettings {
   session: string;
   year: string;
   semester: string;
-  program?: string;
+  program: string;
   minStudents?: number;
   maxStudents?: number;
   includeFields: string[];

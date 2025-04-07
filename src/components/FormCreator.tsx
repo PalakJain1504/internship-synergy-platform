@@ -37,7 +37,7 @@ interface FormCreatorProps {
   isOpen: boolean;
   onClose: () => void;
   portalType: 'project' | 'internship';
-  onFormCreated: (formSettings: any, formUrl: string) => void;
+  onFormCreated: (formSettings: FormSettings, formUrl: string) => void;
 }
 
 const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, onFormCreated }) => {
@@ -71,8 +71,12 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
   });
 
   const defaultFormFields = portalType === 'project' ? 
-    ['rollNo', 'name', 'email', 'phoneNo', 'groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor', 'year', 'semester', 'session', 'program'] : 
-    ['rollNo', 'name', 'program', 'organization', 'dates', 'year', 'semester', 'session'];
+    ['rollNo', 'name', 'email', 'phoneNo', 'groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor'] : 
+    ['rollNo', 'name', 'program', 'organization', 'dates', 'internshipDuration', 'mobileNumber'];
+
+  const baseFields = portalType === 'project' ? 
+    [...defaultFormFields, 'year', 'semester', 'session', 'program'] : 
+    [...defaultFormFields, 'year', 'semester', 'session', 'program'];
 
   const defaultPdfFields = portalType === 'project' ? 
     ['form', 'presentation', 'report'] : 
@@ -86,7 +90,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
     program: '',
     minStudents: 1,
     maxStudents: 1,
-    includeFields: defaultFormFields,
+    includeFields: baseFields,
     pdfFields: defaultPdfFields,
     customFields: [],
   };
@@ -121,7 +125,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-3xl">
+      <SheetContent className="sm:max-w-3xl overflow-y-auto h-full">
         <SheetHeader>
           <SheetTitle>Create New Form</SheetTitle>
           <SheetDescription>
@@ -129,7 +133,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-10">
             <FormField
               control={form.control}
               name="title"
@@ -146,6 +150,101 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 </FormItem>
               )}
             />
+            <div className="flex flex-col space-y-4">
+              <Label>Base Fields</Label>
+              <FormDescription>
+                Select the base fields you want to include in the form.
+              </FormDescription>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {[...defaultFormFields, 'year', 'semester', 'session', 'program'].map((field) => (
+                  <FormField
+                    key={field}
+                    control={form.control}
+                    name="includeFields"
+                    render={({ field: { value, onChange } }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3 shadow-sm">
+                        <FormLabel className="text-sm font-normal">
+                          {field === 'rollNo' ? 'Roll Number' :
+                            field === 'name' ? 'Student Name' :
+                              field === 'email' ? 'Email' :
+                                field === 'phoneNo' ? 'Phone Number' :
+                                  field === 'groupNo' ? 'Group Number' :
+                                    field === 'title' ? 'Project Title' :
+                                      field === 'domain' ? 'Project Domain' :
+                                        field === 'facultyMentor' ? 'Faculty Mentor' :
+                                          field === 'industryMentor' ? 'Industry Mentor' :
+                                            field === 'organization' ? 'Organization' :
+                                              field === 'dates' ? 'Internship Dates' :
+                                                field === 'program' ? 'Program' :
+                                                  field === 'year' ? 'Year' :
+                                                    field === 'semester' ? 'Semester' :
+                                                      field === 'session' ? 'Session' :
+                                                        field === 'internshipDuration' ? 'Internship Duration' :
+                                                          field === 'mobileNumber' ? 'Mobile Number' :
+                                                            field}
+                        </FormLabel>
+                        <FormControl>
+                          <Switch
+                            checked={value?.includes(field)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                onChange([...value, field])
+                              } else {
+                                onChange(value?.filter((v) => v !== field))
+                              }
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+            {portalType === 'project' && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="minStudents"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Min Students per Group</FormLabel>
+                      <FormDescription>
+                        Minimum number of students allowed in each group.
+                      </FormDescription>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          value={field.value}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="maxStudents"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Max Students per Group</FormLabel>
+                      <FormDescription>
+                        Maximum number of students allowed in each group.
+                      </FormDescription>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          value={field.value}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
             <FormField
               control={form.control}
               name="session"
@@ -210,99 +309,6 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 </FormItem>
               )}
             />
-            {portalType === 'project' && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="minStudents"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Min Students per Group</FormLabel>
-                      <FormDescription>
-                        Minimum number of students allowed in each group.
-                      </FormDescription>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          value={field.value}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="maxStudents"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max Students per Group</FormLabel>
-                      <FormDescription>
-                        Maximum number of students allowed in each group.
-                      </FormDescription>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          value={field.value}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
-            )}
-            <div className="flex flex-col space-y-4">
-              <Label>Base Fields</Label>
-              <FormDescription>
-                Select the base fields you want to include in the form.
-              </FormDescription>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {['rollNo', 'name', 'email', 'phoneNo', 'groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor', 'organization', 'dates', 'program', 'year', 'semester', 'session'].map((field) => (
-                  <FormField
-                    key={field}
-                    control={form.control}
-                    name="includeFields"
-                    render={({ field: { value, onChange } }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3 shadow-sm">
-                        <FormLabel className="text-sm font-normal">
-                          {field === 'rollNo' ? 'Roll Number' :
-                            field === 'name' ? 'Student Name' :
-                              field === 'email' ? 'Email' :
-                                field === 'phoneNo' ? 'Phone Number' :
-                                  field === 'groupNo' ? 'Group Number' :
-                                    field === 'title' ? 'Project Title' :
-                                      field === 'domain' ? 'Project Domain' :
-                                        field === 'facultyMentor' ? 'Faculty Mentor' :
-                                          field === 'industryMentor' ? 'Industry Mentor' :
-                                            field === 'organization' ? 'Organization' :
-                                              field === 'dates' ? 'Internship Dates' :
-                                                field === 'program' ? 'Program' :
-                                                  field === 'year' ? 'Year' :
-                                                    field === 'semester' ? 'Semester' :
-                                                      field === 'session' ? 'Session' :
-                                                        field}
-                        </FormLabel>
-                        <FormControl>
-                          <Switch
-                            checked={value?.includes(field)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                onChange([...value, field])
-                              } else {
-                                onChange(value?.filter((v) => v !== field))
-                              }
-                            }}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                ))}
-              </div>
-            </div>
             <div className="flex flex-col space-y-4">
               <Label>PDF File Upload Fields</Label>
               <FormDescription>
@@ -330,10 +336,9 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                             checked={value?.includes(field)}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                onChange(checked ? 
-                                  [...value, field] : 
-                                  value?.filter(v => v !== field)
-                                )
+                                onChange([...value, field]);
+                              } else {
+                                onChange(value?.filter(v => v !== field));
                               }
                             }}
                           />
