@@ -70,13 +70,22 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
     customFields: z.array(z.string()).default([]),
   });
 
+  // Define the default form fields based on portal type
   const defaultFormFields = portalType === 'project' ? 
     ['rollNo', 'name', 'email', 'phoneNo', 'groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor'] : 
-    ['rollNo', 'name', 'program', 'organization', 'dates', 'internshipDuration', 'mobileNumber'];
+    ['rollNo', 'name', 'program', 'organization', 'dates'];
 
+  // Define the metadata fields that are not displayed directly to students in the form
+  // but are managed by faculty and needed for data organization
+  const metadataFields = ['year', 'semester', 'session'];
+
+  // Fields to include in the base form
   const baseFields = portalType === 'project' ? 
-    [...defaultFormFields, 'year', 'semester', 'session', 'program'] : 
-    [...defaultFormFields, 'year', 'semester', 'session', 'program'];
+    [...defaultFormFields, ...metadataFields] : 
+    [...defaultFormFields, ...metadataFields];
+  
+  // Optional additional fields for internships
+  const additionalInternshipFields = ['internshipDuration', 'mobileNumber'];
 
   const defaultPdfFields = portalType === 'project' ? 
     ['form', 'presentation', 'report'] : 
@@ -141,7 +150,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 overflow-y-auto max-h-[calc(100vh-150px)] pr-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 overflow-y-auto max-h-[calc(100vh-150px)] pr-2 pb-16">
             <FormField
               control={form.control}
               name="title"
@@ -152,19 +161,20 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                     Give your form a clear and descriptive title.
                   </FormDescription>
                   <FormControl>
-                    <Input placeholder="Project Data Collection" {...field} />
+                    <Input placeholder={portalType === 'project' ? "Project Data Collection" : "Internship Data Collection"} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <div className="flex flex-col space-y-4">
               <Label>Base Fields</Label>
               <FormDescription>
                 Select the base fields you want to include in the form.
               </FormDescription>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {[...defaultFormFields, 'year', 'semester', 'session', 'program'].map((field) => (
+                {defaultFormFields.map((field) => (
                   <FormField
                     key={field}
                     control={form.control}
@@ -183,13 +193,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                                           field === 'industryMentor' ? 'Industry Mentor' :
                                             field === 'organization' ? 'Organization' :
                                               field === 'dates' ? 'Internship Dates' :
-                                                field === 'program' ? 'Program' :
-                                                  field === 'year' ? 'Year' :
-                                                    field === 'semester' ? 'Semester' :
-                                                      field === 'session' ? 'Session' :
-                                                        field === 'internshipDuration' ? 'Internship Duration' :
-                                                          field === 'mobileNumber' ? 'Mobile Number' :
-                                                            field}
+                                                field}
                         </FormLabel>
                         <FormControl>
                           <Switch
@@ -209,6 +213,45 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 ))}
               </div>
             </div>
+            
+            {portalType === 'internship' && (
+              <div className="flex flex-col space-y-4">
+                <Label>Additional Fields</Label>
+                <FormDescription>
+                  Select additional fields for internship data.
+                </FormDescription>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {additionalInternshipFields.map((field) => (
+                    <FormField
+                      key={field}
+                      control={form.control}
+                      name="includeFields"
+                      render={({ field: { value, onChange } }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3 shadow-sm">
+                          <FormLabel className="text-sm font-normal">
+                            {field === 'internshipDuration' ? 'Internship Duration' :
+                             field === 'mobileNumber' ? 'Mobile Number' : field}
+                          </FormLabel>
+                          <FormControl>
+                            <Switch
+                              checked={value?.includes(field)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  onChange([...value, field])
+                                } else {
+                                  onChange(value?.filter((v) => v !== field))
+                                }
+                              }}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {portalType === 'project' && (
               <>
                 <FormField
@@ -253,14 +296,15 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 />
               </>
             )}
+            
             <FormField
               control={form.control}
               name="session"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Session</FormLabel>
+                  <FormLabel>Default Session</FormLabel>
                   <FormDescription>
-                    Enter the session for which this form is valid.
+                    Enter the default session value for this form.
                   </FormDescription>
                   <FormControl>
                     <Input placeholder="2023-2024" {...field} />
@@ -269,14 +313,15 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="year"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Year</FormLabel>
+                  <FormLabel>Default Year</FormLabel>
                   <FormDescription>
-                    Enter the year for which this form is valid.
+                    Enter the default year value for this form.
                   </FormDescription>
                   <FormControl>
                     <Input placeholder="4" {...field} />
@@ -285,14 +330,15 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="semester"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Semester</FormLabel>
+                  <FormLabel>Default Semester</FormLabel>
                   <FormDescription>
-                    Enter the semester for which this form is valid.
+                    Enter the default semester value for this form.
                   </FormDescription>
                   <FormControl>
                     <Input placeholder="8" {...field} />
@@ -301,14 +347,15 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="program"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Program</FormLabel>
+                  <FormLabel>Default Program</FormLabel>
                   <FormDescription>
-                    Enter the program for which this form is valid.
+                    Enter the default program value for this form.
                   </FormDescription>
                   <FormControl>
                     <Input placeholder="B.Tech CSE" {...field} />
@@ -317,6 +364,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 </FormItem>
               )}
             />
+            
             <div className="flex flex-col space-y-4">
               <Label>PDF File Upload Fields</Label>
               <FormDescription>
@@ -357,6 +405,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 ))}
               </div>
             </div>
+            
             <div className="sticky bottom-0 py-4 bg-white border-t mt-8">
               <Button type="submit" disabled={isCreating}>
                 {isCreating ? "Creating..." : "Create Form"}

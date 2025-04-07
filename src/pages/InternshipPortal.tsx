@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -75,7 +76,9 @@ const InternshipPortal = () => {
           if (item.program) programsSet.add(item.program);
           
           Object.keys(item).forEach(key => {
-            if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session", "isEditing", "isNew"].includes(key)) {
+            // Exclude standard columns and include only dynamic ones
+            if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", 
+                  "year", "semester", "session", "isEditing", "isNew", "internshipDuration", "mobileNumber"].includes(key)) {
               if (key.startsWith('Attendance') || !columnsSet.has(key)) {
                 columnsSet.add(key);
               }
@@ -149,7 +152,8 @@ const InternshipPortal = () => {
       
       entries.forEach(entry => {
         Object.keys(entry).forEach(key => {
-          if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", "year", "semester", "session", "isEditing", "isNew"].includes(key)) {
+          if (!["id", "rollNo", "name", "program", "organization", "dates", "noc", "offerLetter", "pop", 
+                "year", "semester", "session", "isEditing", "isNew", "internshipDuration", "mobileNumber"].includes(key)) {
             if (key.startsWith('Attendance') && !dynamicColumns.includes(key)) {
               newDynamicColumns.add(key);
             } else if (!dynamicColumns.includes(key)) {
