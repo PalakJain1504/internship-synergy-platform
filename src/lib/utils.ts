@@ -77,31 +77,38 @@ export function generateSampleProjects(count = 70): ProjectData[] {
 }
 
 // Function to generate sample internship data
-export function generateSampleInternships(count = 50): InternshipData[] {
-  const programs = ['BSc', 'BTech CSE', 'BTech AI/ML', 'BCA', 'BCA AI/DS', 'MCA'];
-  const organizations = ['Microsoft', 'Google', 'Amazon', 'IBM', 'Infosys', 'TCS', 'Wipro', 'Accenture'];
-  const years = ['4','3', '2', '1'];
-  const semesters = ['8','7','6','5','4','3','2','1'];
-
+export const generateSampleInternships = (count: number): InternshipData[] => {
+  const programs = ['BTech CSE', 'BTech CSE (FSD)', 'BTech CSE (UI/UX)', 'BTech AI/ML', 'BSc CS', 'BSc DS', 'BSc Cyber', 'BCA', 'BCA (AI/DS)'];
+  const years = ['1', '2', '3', '4'];
+  const semesters = ['1', '2', '3', '4', '5', '6', '7', '8'];
+  const organizations = ['TCS', 'Wipro', 'Infosys', 'Microsoft', 'Google', 'Amazon', 'IBM', 'Cognizant', 'Accenture', 'HCL'];
+  
   return Array.from({ length: count }).map((_, index) => {
+    const program = programs[Math.floor(Math.random() * programs.length)];
+    const year = years[Math.floor(Math.random() * years.length)];
+    const semester = semesters[Math.floor(Math.random() * semesters.length)];
+    const organization = organizations[Math.floor(Math.random() * organizations.length)];
+    
     return {
-      id: `internship-${index + 1}`,
-      rollNo: `R${100 + index}`,
+      id: `sample-${index + 1}`,
+      rollNo: `R${21000 + index}`,
       name: `Student ${index + 1}`,
-      program: programs[index % programs.length],
-      organization: organizations[index % organizations.length],
-      dates: `${new Date().getMonth() + 1}/1/2023 - ${new Date().getMonth() + 2}/1/2023`,
-      noc: index % 2 === 0 ? `noc_${index + 1}.pdf` : "",
-      offerLetter: index % 3 === 0 ? `offer_${index + 1}.pdf` : "",
-      pop: index % 4 === 0 ? `pop_${index + 1}.pdf` : "",
-      year: years[index % years.length],
-      semester: semesters[index % semesters.length],
-      session: Math.random() > 0.5 ? '2024-2025' : '2023-2024',
-      ...(index % 5 === 0 ? { "Attendance May": `attendance_may_${index + 1}.pdf` } : {}),
-      ...(index % 7 === 0 ? { "Attendance June": `attendance_june_${index + 1}.pdf` } : {})
+      program,
+      organization,
+      dates: `${new Date().getFullYear()}-05-10 to ${new Date().getFullYear()}-07-10`,
+      internshipDuration: '2 months',
+      mobileNumber: `9876${543210 + index}`,
+      noc: '',
+      offerLetter: '',
+      pop: '',
+      year,
+      semester,
+      session: '2023-2024',
+      'Attendance May': Math.random() > 0.3 ? 'Present' : 'Absent',
+      'Attendance June': Math.random() > 0.3 ? 'Present' : 'Absent',
     };
   });
-}
+};
 
 export function filterProjects(
   projects: ProjectData[],

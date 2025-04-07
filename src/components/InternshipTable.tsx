@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft,
@@ -32,6 +31,25 @@ interface InternshipTableProps {
   onPageSizeChange: (size: number) => void;
   dynamicColumns?: string[];
 }
+
+const emptyRow: InternshipData = {
+  id: `new-${Date.now()}`,
+  rollNo: '',
+  name: '',
+  program: '',
+  organization: '',
+  dates: '',
+  internshipDuration: '',
+  mobileNumber: '',
+  noc: '',
+  offerLetter: '',
+  pop: '',
+  year: '',
+  semester: '',
+  session: '',
+  isEditing: true,
+  isNew: true,
+};
 
 const InternshipTable: React.FC<InternshipTableProps> = ({
   data,
@@ -121,6 +139,8 @@ const InternshipTable: React.FC<InternshipTableProps> = ({
       program: '',
       organization: '',
       dates: '',
+      internshipDuration: '',
+      mobileNumber: '',
       noc: '',
       offerLetter: '',
       pop: '',

@@ -191,6 +191,12 @@ async function createGoogleForm(accessToken: string, settings: FormSettings) {
         case 'dates':
           fieldTitle = 'Internship Dates';
           break;
+        case 'internshipDuration':
+          fieldTitle = 'Internship Duration';
+          break;
+        case 'mobileNumber':
+          fieldTitle = 'Mobile Number';
+          break;
         case 'form':
           fieldTitle = 'Project Proposal Form (PDF)';
           fieldType = 'FILE_UPLOAD';
@@ -353,15 +359,15 @@ serve(async (req) => {
         const formData = await createGoogleForm(tokens.access_token, settings);
 
         // Redirect the user back to the application with the form URL
-        const redirectUrl = new URL(url.origin);
-        redirectUrl.pathname = '/oauth2/callback';
-        redirectUrl.searchParams.append('formUrl', formData.formUrl);
-        redirectUrl.searchParams.append('formId', formData.formId);
+        const appUrl = new URL(url.origin);
+        appUrl.pathname = '/oauth2callback';
+        appUrl.searchParams.append('formUrl', formData.formUrl);
+        appUrl.searchParams.append('formId', formData.formId);
         
         return new Response(null, {
           status: 302,
           headers: {
-            Location: redirectUrl.toString(),
+            Location: appUrl.toString(),
             ...corsHeaders
           }
         });

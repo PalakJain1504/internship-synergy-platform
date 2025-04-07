@@ -26,10 +26,10 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet"
+} from "@/components/ui/sheet";
 import { useForm } from 'react-hook-form';
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { initiateGoogleAuth } from '@/services/googleFormsService';
 import { FormSettings } from '@/lib/types';
 
@@ -61,13 +61,13 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
     }),
     minStudents: z.number().min(1, {
       message: "Min students must be at least 1.",
-    }),
+    }).optional().default(1),
     maxStudents: z.number().min(1, {
       message: "Max students must be at least 1.",
-    }),
+    }).optional().default(1),
     includeFields: z.array(z.string()),
     pdfFields: z.array(z.string()),
-    customFields: z.array(z.string()),
+    customFields: z.array(z.string()).default([]),
   });
 
   const defaultFormFields = portalType === 'project' ? 
@@ -107,7 +107,15 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
       // Add the portalType to the form settings
       const formSettingsWithType: FormSettings = {
         ...values,
-        portalType
+        portalType,
+        title: values.title,
+        session: values.session,
+        year: values.year,
+        semester: values.semester,
+        program: values.program,
+        includeFields: values.includeFields,
+        pdfFields: values.pdfFields,
+        customFields: values.customFields || [],
       };
       
       const authUrl = await initiateGoogleAuth(formSettingsWithType);
@@ -125,7 +133,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-3xl overflow-y-auto h-full pb-20">
+      <SheetContent className="sm:max-w-3xl overflow-y-auto h-screen pb-20">
         <SheetHeader>
           <SheetTitle>Create New Form</SheetTitle>
           <SheetDescription>
@@ -133,7 +141,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 overflow-y-auto max-h-[calc(100vh-150px)] pr-2">
             <FormField
               control={form.control}
               name="title"
@@ -215,8 +223,8 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                       <FormControl>
                         <Input 
                           type="number" 
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          value={field.value}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                          value={field.value || 1}
                         />
                       </FormControl>
                       <FormMessage />
@@ -235,8 +243,8 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                       <FormControl>
                         <Input 
                           type="number" 
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          value={field.value}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                          value={field.value || 1}
                         />
                       </FormControl>
                       <FormMessage />
