@@ -51,10 +51,10 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
       message: "Session must be at least 2 characters.",
     }),
     year: z.string().min(1, {
-      message: "Year must be at least 1 characters.",
+      message: "Year must be at least 1 character.",
     }),
     semester: z.string().min(1, {
-      message: "Semester must be at least 1 characters.",
+      message: "Semester must be at least 1 character.",
     }),
     program: z.string().min(2, {
       message: "Program must be at least 2 characters.",
@@ -125,7 +125,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-3xl overflow-y-auto h-full">
+      <SheetContent className="sm:max-w-3xl overflow-y-auto h-full pb-20">
         <SheetHeader>
           <SheetTitle>Create New Form</SheetTitle>
           <SheetDescription>
@@ -133,7 +133,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-10">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
               control={form.control}
               name="title"
@@ -155,7 +155,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
               <FormDescription>
                 Select the base fields you want to include in the form.
               </FormDescription>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {[...defaultFormFields, 'year', 'semester', 'session', 'program'].map((field) => (
                   <FormField
                     key={field}
@@ -314,7 +314,7 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
               <FormDescription>
                 Select which PDF file upload fields you want to include.
               </FormDescription>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {defaultPdfFields.map((field) => (
                   <FormField
                     key={field}
@@ -349,9 +349,11 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 ))}
               </div>
             </div>
-            <Button type="submit" disabled={isCreating}>
-              {isCreating ? "Creating..." : "Create Form"}
-            </Button>
+            <div className="sticky bottom-0 py-4 bg-white border-t mt-8">
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? "Creating..." : "Create Form"}
+              </Button>
+            </div>
           </form>
         </Form>
       </SheetContent>

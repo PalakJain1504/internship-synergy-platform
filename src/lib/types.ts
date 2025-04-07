@@ -35,8 +35,8 @@ export interface InternshipData {
   program: string;
   organization: string;
   dates: string;
-  internshipDuration?: string;
-  mobileNumber?: string;
+  internshipDuration: string;
+  mobileNumber: string;
   noc: string;
   offerLetter: string;
   pop: string;

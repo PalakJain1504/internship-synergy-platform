@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from '@/pages/Login';
@@ -7,14 +8,15 @@ import InternshipPortal from '@/pages/InternshipPortal';
 import NotFound from '@/pages/NotFound';
 import { AuthProvider } from '@/context/AuthContext';
 import OAuth2Callback from '@/pages/OAuth2Callback';
-import { Toaster } from "@/components/ui/sonner"
+import { Toaster } from "@/components/ui/sonner";
+import Index from '@/pages/Index';
 
 function App() {
   return (
     <div className="app">
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/home" element={<Home />} />
           <Route path="/project-portal" element={<ProjectPortal />} />

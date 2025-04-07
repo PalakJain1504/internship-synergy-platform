@@ -15,8 +15,8 @@ export type Database = {
           dates: string | null
           faculty_coordinator: string | null
           id: string
-          "internship duration": string | null
-          "mobile number": string | null
+          internship_duration: string | null
+          mobile_number: string | null
           name: string | null
           noc: string | null
           offer_letter: string | null
@@ -34,8 +34,8 @@ export type Database = {
           dates?: string | null
           faculty_coordinator?: string | null
           id?: string
-          "internship duration"?: string | null
-          "mobile number"?: string | null
+          internship_duration?: string | null
+          mobile_number?: string | null
           name?: string | null
           noc?: string | null
           offer_letter?: string | null
@@ -53,8 +53,8 @@ export type Database = {
           dates?: string | null
           faculty_coordinator?: string | null
           id?: string
-          "internship duration"?: string | null
-          "mobile number"?: string | null
+          internship_duration?: string | null
+          mobile_number?: string | null
           name?: string | null
           noc?: string | null
           offer_letter?: string | null
