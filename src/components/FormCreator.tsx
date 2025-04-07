@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Form,
@@ -25,12 +26,12 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet"
 import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { initiateGoogleAuth } from '@/services/googleFormsService';
+import { FormSettings } from '@/lib/types';
 
 interface FormCreatorProps {
   isOpen: boolean;
@@ -67,10 +68,17 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
     includeFields: z.array(z.string()),
     pdfFields: z.array(z.string()),
     customFields: z.array(z.string()),
-  })
+  });
+
+  const defaultFormFields = portalType === 'project' ? 
+    ['rollNo', 'name', 'email', 'phoneNo', 'groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor', 'year', 'semester', 'session', 'program'] : 
+    ['rollNo', 'name', 'program', 'organization', 'dates', 'year', 'semester', 'session'];
+
+  const defaultPdfFields = portalType === 'project' ? 
+    ['form', 'presentation', 'report'] : 
+    ['noc', 'offerLetter', 'pop'];
 
   const defaultSettings = {
-    portalType,
     title: '',
     session: '',
     year: '',
@@ -78,12 +86,8 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
     program: '',
     minStudents: 1,
     maxStudents: 1,
-    includeFields: portalType === 'project' ? 
-      ['rollNo', 'name', 'email', 'phoneNo', 'groupNo', 'title', 'domain', 'facultyMentor', 'industryMentor'] : 
-      ['rollNo', 'name', 'program', 'organization', 'dates', 'year', 'semester', 'session'],
-    pdfFields: portalType === 'project' ? 
-      ['form', 'presentation', 'report'] : 
-      ['noc', 'offerLetter', 'pop'],
+    includeFields: defaultFormFields,
+    pdfFields: defaultPdfFields,
     customFields: [],
   };
 
@@ -91,12 +95,18 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
     resolver: zodResolver(formSchema),
     defaultValues: defaultSettings,
     mode: "onChange"
-  })
+  });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsCreating(true);
     try {
-      const authUrl = await initiateGoogleAuth(values);
+      // Add the portalType to the form settings
+      const formSettingsWithType: FormSettings = {
+        ...values,
+        portalType
+      };
+      
+      const authUrl = await initiateGoogleAuth(formSettingsWithType);
       window.location.href = authUrl;
       onClose();
     } catch (error: any) {
@@ -212,7 +222,11 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                         Minimum number of students allowed in each group.
                       </FormDescription>
                       <FormControl>
-                        <Input type="number" defaultValue={1} {...field} />
+                        <Input 
+                          type="number" 
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          value={field.value}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -228,7 +242,11 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                         Maximum number of students allowed in each group.
                       </FormDescription>
                       <FormControl>
-                        <Input type="number" defaultValue={1} {...field} />
+                        <Input 
+                          type="number" 
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          value={field.value}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -291,14 +309,14 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                 Select which PDF file upload fields you want to include.
               </FormDescription>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {formSettings.pdfFields.map((field) => (
+                {defaultPdfFields.map((field) => (
                   <FormField
                     key={field}
                     control={form.control}
-                    name={`pdfFields.${field}`}
+                    name="pdfFields"
                     render={({ field: { value, onChange } }) => (
-                      <FormItem>
-                        <FormLabel>
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3 shadow-sm">
+                        <FormLabel className="text-sm font-normal">
                           {field === 'form' ? 'Project Proposal Form' : 
                            field === 'presentation' ? 'Final Presentation' : 
                            field === 'report' ? 'Project Report' : 
@@ -307,19 +325,17 @@ const FormCreator: React.FC<FormCreatorProps> = ({ isOpen, onClose, portalType, 
                            field === 'pop' ? 'POP' : 
                            field}
                         </FormLabel>
-                        <FormDescription>
-                          {field === 'form' ? 'PDF of project proposal form' : 
-                           field === 'presentation' ? 'PPT or PDF of final presentation' : 
-                           field === 'report' ? 'PDF of project report' : 
-                           field === 'noc' ? 'PDF of No Objection Certificate' : 
-                           field === 'offerLetter' ? 'PDF of offer letter' : 
-                           field === 'pop' ? 'PDF of proof of participation' : 
-                           `Upload ${field}`}
-                        </FormDescription>
                         <FormControl>
                           <Switch
-                            checked={value}
-                            onCheckedChange={onChange}
+                            checked={value?.includes(field)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                onChange(checked ? 
+                                  [...value, field] : 
+                                  value?.filter(v => v !== field)
+                                )
+                              }
+                            }}
                           />
                         </FormControl>
                       </FormItem>
